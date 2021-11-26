@@ -13,9 +13,11 @@ def format(str):
 # For Reading the files , Instructions and Code Input reading
 def readFile(File,Array):
     for line in File:
+        if(line[0] == '.'):
+            continue
         line=format(line)
         col=line.split(" ")
-        col[2]=col[2].rstrip("\n")
+        col[2] = col[2].rstrip("\n")
         Array.append(col)
 def passOne():
     locFile=open("out.txt","w")
