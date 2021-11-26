@@ -1,18 +1,31 @@
+from os import replace
+import string as str
 code = open("Input.txt", "r")
 ins = open("Instruction_Set.txt", "r")
 codearr = []
 insarr = []
-
+#For formatting the strings
+def format(str):
+    str2=""
+    for i in range(len(str)):
+        if(str[i]==" "and str[i+1]==" "):
+            continue
+        else:
+            str2+=str[i]
+    return str2
+#For Reading the files , Instructions and Code Input reading
 def readFile(File,Array):
     for line in File:
-        col = line.split("^")
-        col[0] = col[0].strip(" ")
-        col[1] = col[1].strip(" ")
-        col[2] = col[2].rstrip("\n")
+        line=format(line)
+        col=line.split(" ")
+        col[2]=col[2].rstrip("\n")
         Array.append(col)
-readFile(code,codearr)
+
+        
+readFile(code,codearr)   
 readFile(ins,insarr)
-#print(codearr,"\n\n\n\n",insarr)
+
+
 def location_counter():
     Locctr=open("Locctr.txt","w")
     start_address=int(codearr[0][2], 16)
@@ -51,11 +64,7 @@ def location_counter():
             start_address = hex(int(start_address,16) + int(value,16))
         print(start_address)
 
-
-
-
 location_counter()
-
 
 
 
@@ -71,7 +80,6 @@ def symbol_table():
             symbol_tablefile.write(i[0]+"\t"+Counter_Array[counter])
         counter=counter+1
 symbol_table()
-
 
 
 
