@@ -1,3 +1,6 @@
+inputFile = "in.txt"
+instructionFile = "Instruction_Set.txt"
+
 #For formatting the strings
 def format(str):
     str2=""
@@ -22,7 +25,7 @@ def passOne():
     start_address=hex(start_address) 
     for i in codearr:
         locFile.write(start_address + '\n')
-        print(start_address,"\t\t",i[1])
+        # print(start_address,"\t\t",i[1])
         if(i[1] == "LTORG" or i[1] == "END"):
             for e in lit:
                 if(e[1] == ''):
@@ -96,8 +99,8 @@ def symbol_table():
     symbFile.close()
     locFile.close()
 
-code = open("in.txt", "r")
-ins = open("Instruction_Set.txt", "r")
+code = open(inputFile, "r")
+ins = open(instructionFile, "r")
 codearr = []
 insarr = []
         
