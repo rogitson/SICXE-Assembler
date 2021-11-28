@@ -5,7 +5,7 @@ You must have python installed. To run the code, simply run
 
 > python SICXE_ASM.py
 
-Ensure you have the input files in the same directory as the python script. The default names for the input files are "in.txt" and "Instruction_Set.txt". These names can be changed inside the script.
+Ensure you have the input files in the same directory as the python script. The default names for the input files are "in.txt" and "in_set.txt". These names can be changed inside the script.
 
 The instruction set file should contain each instruction, its format and its opcode all separated by spaces, with each instruction on a separate line.
 
