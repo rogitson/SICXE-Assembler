@@ -16,7 +16,12 @@ def readFile(File,Array):
             continue
         line=format(line)
         col=line.split(" ")
-        col[2] = col[2].rstrip("\n")
+        if(len(col) == 1):
+            continue
+        elif(len(col) == 2):
+            col.append('')
+        else:
+            col[2] = col[2].rstrip("\n")
         Array.append(col)
 def passOne():
     if(codearr[0][1].upper() != "START"):
