@@ -19,6 +19,7 @@ def readFile(File,Array):
         if(len(col) == 1):
             continue
         elif(len(col) == 2):
+            col[1] = col[1].rstrip("\n")
             col.append('')
         else:
             col[2] = col[2].rstrip("\n")
