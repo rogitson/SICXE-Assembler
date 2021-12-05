@@ -31,9 +31,10 @@ def passOne():
     litable = open("litTable.txt", "w")
     lit = []
     start_address=int(codearr[0][2], 16)
-    current_address=hex(start_address) 
+    current_address=hex(start_address)
     for i in codearr:
-        locFile.write(current_address + '\n')
+        #Out.write("{:<8}{:<6}".format(hex(Loc),line))
+        locFile.write("{:<8}{:<8}{:8}{:8}{}".format(current_address,i[0],i[1],i[2],'\n'))
         # print(current_address,"\t\t",i[1])
         steps = 0
         if(i[1] == "LTORG" or i[1] == "END"):
@@ -47,11 +48,11 @@ def passOne():
                                 steps += 1
                     else:
                         steps += 1
-                    current_address = hex(int(current_address,16) + steps)  
-                    litable.write(e[0] + "\t" + e[1] + "\n") 
+                    current_address = hex(int(current_address,16) + steps)
+                    litable.write(e[0] + "\t" + e[1] + "\n")
             continue
         elif(i[1] == "BASE"):
-            continue  
+            continue
         elif(i[1][0] == "+"):
             steps += 4
         elif(i[1][0] == "&"):
@@ -103,10 +104,11 @@ def symbol_table():
     locFile=open("out.txt","r")
     Counter_Array= []
     for i in locFile:
-        Counter_Array.append(i)
+        row=i.split(' ')
+        Counter_Array.append(row[0])
     for i in codearr:
         if(i[0]!=""):
-            symbFile.write(i[0]+"\t"+Counter_Array[counter])
+            symbFile.write("{:10}{:10}{}".format(i[0],Counter_Array[counter],'\n'))
         counter += 1
     symbFile.close()
     locFile.close()
@@ -143,7 +145,7 @@ if __name__ == "__main__":
     codearr = []
     insarr = []
             
-    readFile(code,codearr)   
+    readFile(code,codearr)
     readFile(ins,insarr)
 
     passOne()
