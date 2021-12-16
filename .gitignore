@@ -3,3 +3,5 @@ out.txt
 symbTable.txt
 litTable.txt
 in_set.txt
+Objectout.txt
+__pycache__/
