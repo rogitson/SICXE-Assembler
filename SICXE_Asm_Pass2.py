@@ -1,30 +1,33 @@
 #import SICXE_Asm as PassOne
 from SICXE_Asm import readFile
+
 def objectCode():
     objectCodeFile=open("Objectout.txt","w")
     ObjArr=[]
     Line_Number=0
     for i in codearr:
+        if(i[1] == "BASE" or i[1]=="START" or i[1]=="END" or i[1]=="LTORG" or i[1]=="RSUB"):
+            Line_Number += 1
+            continue
         for j in insarr:
-            Opcode=""
+            Objcode=[]
             if(i[1][0]=="+" or i[1][0]=="$"):#Direct Addressing
                 pass
-            if (i[1]==j[0] or i[1][0] =="&"):#PC or Base relative
-                Opcode=list(j[2])
+            if (i[1]==j[0]):#PC or Base relative #or i[1][0] =="&"
+                Objcode=list(j[2])
                 if(i[2][0]=="#"):
-                    Opcode[1]=hex(int(Opcode[1],16)+1)
+                    Objcode[1]=hex(int(Objcode[1],16)+1)[2:]
                     pass
                 elif(i[2][0]=="@"):
-                    Opcode[1]=hex(int(Opcode[1],16)+2)
+                    Objcode[1]=hex(int(Objcode[1],16)+2)[2:]
                     pass
                 elif(i[2][0]=="="):
                     pass
                 else:
-                    Opcode[1]=hex(int(Opcode[1],16)+3)
+                    Objcode[1]=hex(int(Objcode[1],16)+3)[2:]
                     pass
-                #Objcode.append(calcAddress(Line_Number,i[2]))
-                print(Opcode)
-                
+                Objcode.append(calcAddress(Line_Number,i[2]))
+                print(Objcode, i)         
         Line_Number += 1
 
 
@@ -34,7 +37,7 @@ def HTE():
 
 def calcAddress(Line_Number,Label):
     print(Line_Number)
-    if (Label=="START" or Label=="END"):
+    if (Label[0] == "="):
         return 0
     flag=1
     base=getBase()
@@ -46,7 +49,7 @@ def calcAddress(Line_Number,Label):
     if(flag):
         raise Exception("A very specific bad thing happened, but I won't tell you what it is.")
     if(dest - src <= 2047):
-        return hex(dest-src)
+        return "2" + hex(dest-src)[2:]
     elif(dest-base <= 4095):
         pass
     pass
