@@ -106,45 +106,16 @@ def passOne():
     symbFile.close()
 
 
-
-inputFile = "in.txt"
-instructionFile = "in_set.txt"
-
-code = open(inputFile, "r")
-ins = open(instructionFile, "r")
-codearr = []
-insarr = []
-
-readFile(code,codearr)
-readFile(ins,insarr)
-passOne()
-print("Success!")
-code.close()
-ins.close()
-
-# def main(argv):
-#     try:
-#         opts, args = getopt.getopt(argv,"hi:o:",["ifile=","ofile="])
-#     except getopt.GetoptError:
-#         print ('test.py -i <inputfile> -o <outputfile>')
-#         sys.exit(2)
-#     for opt, arg in opts:
-#         if opt in ('-h', "--help"):
-#             print("-h, --help\t-\tprint the help message\n" +
-#             "-i, --input\t-\tinput file\n" +
-#             "-s, --set\t-\tinstruction set file\n" +
-#             "-o, --output\t-\toutput file")
-#             sys.exit()
-#         elif opt in ("-i", "--input"):
-#             inputfile = arg
-#         elif opt in ("-s", "--set"):
-#             instructionFile = arg
-#         elif opt in ("-o", "--output"):
-#             outputfile = arg
-
-#if __name__ == "__main__": above main code
-
-#inside main code we put these 3 lines
-    # inputFile = ''
-    # instructionFile = ''
-    # main(sys.argv[1:])
+if __name__ == "__main__":
+    inputFile = "in.txt"
+    instructionFile = "in_set.txt"
+    code = open(inputFile, "r")
+    ins = open(instructionFile, "r")
+    codearr = []
+    insarr = []
+    readFile(code,codearr)
+    readFile(ins,insarr)
+    passOne()
+    print("Success!")
+    code.close()
+    ins.close()
