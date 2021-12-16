@@ -1,5 +1,4 @@
 # import sys, getopt
-
 #For formatting the strings
 def format(str):
     str2=""
@@ -28,6 +27,7 @@ def readFile(File,Array):
 
 
 def passOne():
+    global base
     #cheaking for START 
     if(codearr[0][1].upper() != "START"):
         raise Exception("A very unspecific bad thing happened, but I won't tell you what it is.")
@@ -56,6 +56,7 @@ def passOne():
                     litable.write("{:8}{:8}{}".format(e[0],e[1],'\n'))
             continue
         elif(i[1] == "BASE"):
+            base=current_address
             continue
         elif(i[1][0] == "+"):
             steps += 4
@@ -106,7 +107,9 @@ def passOne():
     symbFile.close()
 
 
+
 if __name__ == "__main__":
+    base=0
     inputFile = "in.txt"
     instructionFile = "in_set.txt"
     code = open(inputFile, "r")
