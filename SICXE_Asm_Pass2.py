@@ -6,11 +6,11 @@ def objectCode():
     ObjArr=[]
     Line_Number=0
     for i in codearr:
+        Objcode=[]
         if(i[1] == "BASE" or i[1]=="START" or i[1]=="END" or i[1]=="LTORG" or i[1]=="RSUB"):
             Line_Number += 1
             continue
         for j in insarr:
-            Objcode=[]
             if(i[1][0]=="+" or i[1][0]=="$"):#Direct Addressing
                 pass
             if (i[1]==j[0]):#PC or Base relative #or i[1][0] =="&"
@@ -27,18 +27,26 @@ def objectCode():
                     Objcode[1]=hex(int(Objcode[1],16)+3)[2:]
                     pass
                 Objcode.append(calcAddress(Line_Number,i[2]))
-                print(Objcode, i)         
+                if(',X' in i[2]):#"".join(Objcode)
+                    temp="".join(Objcode)
+                    Objcode = list(temp)
+                    Objcode[2]=hex(int(Objcode[2],16)+8)[2:]
+                Objcode="".join(Objcode)
         Line_Number += 1
-
+        ObjArr.append(Objcode)
+    print(ObjArr)
 
 
 def HTE():
     pass
+ 
 
 def calcAddress(Line_Number,Label):
     print(Line_Number)
+    if(',X' in Label):
+        Label=Label.rstrip(',X')
     if (Label[0] == "="):
-        return 0
+        return ""
     flag=1
     base=getBase()
     src=int(locarr[Line_Number + 1][0][2:],16)
@@ -49,7 +57,7 @@ def calcAddress(Line_Number,Label):
     if(flag):
         raise Exception("A very specific bad thing happened, but I won't tell you what it is.")
     if(dest - src <= 2047):
-        return "2" + hex(dest-src)[2:]
+        return "2" + hex(dest-src)[2:].zfill(3)
     elif(dest-base <= 4095):
         pass
     pass
