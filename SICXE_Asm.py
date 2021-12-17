@@ -70,13 +70,13 @@ def passOne():
                 steps += 3
         elif(i[1]=="BYTE"):
             data = i[2].split(",")
-            for j in data:
-                if(j[0]=="C"):
-                    for z in j[1:]:
-                        if(z != "'"):
-                            steps += 1
-                else:
-                    steps += 1
+            j=data[0]
+            if(j[0]=="C"):
+                for z in j[1:]:
+                    if(z != "'"):
+                        steps += 1
+            else:
+                steps += 1
         elif(i[1]=="RESW"):
             steps += int(i[2]) * 3
         elif(i[1]=="RESB"):
