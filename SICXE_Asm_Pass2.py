@@ -1,44 +1,10 @@
 #import SICXE_Asm as PassOne
+from os import replace
 from SICXE_Asm import readFile
 
-# def objectCode():
-    # objectCodeFile=open("Objectout.txt","w")
-    # ObjArr=[]
-    # Line_Number=0
-    # print(codearr[16][0][0])
-    # for i in codearr:
-    #     Objcode=[]
-    #     if(i[1] == "BASE" or i[1]=="START" or i[1]=="END" or i[1]=="LTORG"):
-    #         Line_Number += 1
-    #         continue
-    #     for j in insarr:
-    #         if(i[1][0]=="+" or i[1][0]=="$"):#Direct Addressing
-    #             pass
-    #         if (i[1]==j[0]):#PC or Base relative #or i[1][0] =="&"
-    #             Objcode=list(j[2])
-    #             if(i[2][0]=="#"):
-    #                 Objcode[1]=hex(int(Objcode[1],16)+1)[2:]
-    #                 pass
-    #             elif(i[2][0]=="@"):
-    #                 Objcode[1]=hex(int(Objcode[1],16)+2)[2:]
-    #                 pass
-    #             elif(i[2][0]=="="):
-    #                 pass
-    #             else:
-    #                 Objcode[1]=hex(int(Objcode[1],16)+3)[2:]
-    #                 pass
-    #             Objcode.append(calcAddress(Line_Number,i[2]))
-    #             if(',X' in i[2]):#"".join(Objcode)
-    #                 temp="".join(Objcode)
-    #                 Objcode = list(temp)
-    #                 Objcode[2]=hex(int(Objcode[2],16)+8)[2:]
-    #             Objcode="".join(Objcode)
-    #     Line_Number += 1
-    #     ObjArr.append(Objcode)
-    # print(ObjArr)
 def objectCode():
     objectCodeFile=open("Objectout.txt","w")
-    ObjArr=[]
+    global base
     Formats=["$","+","&"]
     AddressingTypes=["#","@","="]
     Literal_Pool=[]
@@ -51,7 +17,7 @@ def objectCode():
         print(i)
         Flags_Disp_Add=""
         opCode=""
-        if (i[1]=="START" or i[1]=="END" or i[1]=="EQU"):#No object Code
+        if (i[1]=="START" or i[1]=="EQU"):#No object Code
             Line_Number+=1
             continue
         if(i[1]=="BASE"):#record base label address
@@ -59,6 +25,10 @@ def objectCode():
             base=getBase(i[2])#sending the label infornt of base to get its address
         elif(i[1]=="LTORG" or i[1]=="END"):#generate pool Tabel
             Line_Number+=1
+            generateLiteral(Literal_Pool,ObjArr)
+            # for i in Literal_Pool:
+            #     if  i[1] != None:
+                    # ObjArr.append(i[1])
         elif(i[1]=="RSUB"):
             Line_Number+=1
             ObjArr.append("4F0000")
@@ -98,7 +68,7 @@ def objectCode():
                         if(any(not c.isalnum() for c in i[2]) and not (',' in i[2])):#we got special type , format 2 or up since format 1 have 0 operands
                         #if(i[2]!=''):
                             if(i[2][0]=="#"):
-                                opCode=hex(int(opCode,16)+1)[2:]
+                                opCode=hex(int(opCode,16)+1)[2:].upper()
                                 Flags_Disp_Add=calcAddress(Line_Number,Label)
                                 #ObjArr.append(opCode+Flags_Disp_Add)
                                 break
@@ -107,7 +77,10 @@ def objectCode():
                                 Flags_Disp_Add=calcAddress(Line_Number,Label)
                                 break
                             elif(i[2][0]=="="):#literal , store it in the array
-                                Literal_Pool.append(i)
+                                if(not Literal_Pool):
+                                    Literal_Pool.append([i[2],None])
+                                elif(not i[2] in Literal_Pool[0]):
+                                    Literal_Pool.append([i[2],None])
                                 continue
                                 #break
                         else:#simple addressing and format 1,2 handling
@@ -120,7 +93,7 @@ def objectCode():
                                     Flags_Disp_Add+=Registers[sl[0]] + Registers[sl[1]]
                                 #ObjArr.append(opCode+Flags_Disp_Add)
                             elif(j[1]=="34"):#format 3
-                                opCode=hex(int(opCode,16)+3)[2:].zfill(2)
+                                opCode=hex(int(opCode,16)+3)[2:].zfill(2).upper()
                                 Flags_Disp_Add=calcAddress(Line_Number,Label)
                             break
                     else:#format 4 or special one
@@ -128,59 +101,99 @@ def objectCode():
                 elif(Line_Number==codearr.__len__() and instruction!=j[0]):#doesn't exist
                     raise Exception("Instruction Not Found")
             ObjArr.append(opCode+Flags_Disp_Add)
-        sstring=opCode+Flags_Disp_Add
     print(ObjArr)
-
 
 def HTE():
     pass
 
+
 def calcAddress(Line_Number,Label):
-    if(',X' in Label):
-        Label=Label.rstrip(',X')
-        Index=8
-    if (Label[0] == "="):
-        return ""
+    Flags="2"#PC by default
+    DispFlags_Displacement=""#Calculate PC or Base
     flag=1
-    base=getBase(Label)
     src=int(locarr[Line_Number ][0][2:],16)
-    for i in symbarr:
+    dest=""
+    if(',X' in Label):#Check for ,X
+        Label=Label.rstrip(',X')
+        Flags=Flags.replace(Flags,hex(int(Flags,16) + 8)[2:].upper())
+    if (Label[0] == "="):#literal
+        return ""
+    for i in symbarr:#check for symbol in symbol table first
         if(Label==i[0]):
             dest=int(i[1][2:],16)
             flag=0
-    if(flag):
+    if(flag):#symbol not found
         raise Exception("A very specific bad thing happened, but I won't tell you what it is.")
     if(dest - src <= 2047):
         if(dest-src <0):
-            return "2" + hex((dest-src) & (2**32-1))[7:]
+            Flags_Disp=Flags + hex((dest-src) & (2**32-1))[7:].upper()
         else:
-            return "2" + hex(dest-src)[2:].zfill(3)#something is not right with LDL instruciton for address calculating
+            Flags_Disp=Flags + hex(dest-src)[2:].zfill(3).upper()
     elif(dest-base <= 4095):
-        print("OutOfBounds")
+        Flags=Flags.replace(Flags,hex(int(Flags,16) + 4 - 2)[2:].upper())#-2 are the PC relative
+        Flags_Disp=Flags + hex(dest-base)[2:].zfill(3).upper()
         pass
-    pass
+    else:
+        raise Exception("invalid address , unreachable")
+    return Flags_Disp
+
 
 def getBase(Label):
-    for i in symbarr:
+    for i in symbarr:#check if label exists in the symbolTable
         if (i[0]==Label):
             return i[1][2:]
 
 
-instructionFile = "in_set.txt"
-codeFile='in.txt'
-symbolTable='symbTable.txt'
-locationCounter='out.txt'
-ins = open(instructionFile, "r")
-code = open(codeFile,"r")
-symTable = open(symbolTable,"r")
-locctr=open(locationCounter,"r")
-insarr = []
-codearr = []
-symbarr=[]
-locarr=[]
-readFile(ins,insarr)
-readFile(code,codearr)
-readFile(symTable,symbarr)
-readFile(locctr,locarr)
-objectCode()
+            # data = i[2].split(",")
+            # j=data[0]
+            # if(j[0]=="C"):
+            #     for z in j[1:]:
+            #         if(z != "'"):
+            #             Flags_Disp_Add+=hex(ord(z))[2:].upper()
+            # elif(j[0]=="X"):
+            #     for z in j[1:]:
+            #         if(z != "'"):
+            #             Flags_Disp_Add+=z
+            # ObjArr.append(Flags_Disp_Add.upper())
+
+
+def generateLiteral(Literalpool,Objarr):
+    for i in Literalpool:
+        if i[1] == None:
+            i[1]=""
+            if(i[0][1]=="C"):
+                for z in i[0][2:]:
+                     if(z != "'"):
+                        i[1]+=hex(ord(z))[2:].upper()
+            elif(i[0][1]=="X"):
+                 for z in i[0][2:]:
+                     if(z != "'"):
+                        i[1]+=z
+            ObjArr.append(i[1])
+
+if __name__ == "__main__":
+    instructionFile = "in_set.txt"
+    codeFile='in.txt'
+    symbolTable='symbTable.txt'
+    locationCounter='out.txt'
+    literalTable='litTable.txt'
+    ins = open(instructionFile, "r")
+    code = open(codeFile,"r")
+    symTable = open(symbolTable,"r")
+    locctr=open(locationCounter,"r")
+    litTable=open(literalTable,"r")
+    insarr = []
+    codearr = []
+    symbarr=[]
+    locarr=[]
+    litarr=[]
+    base=""
+    ObjArr=[]
+    readFile(ins,insarr)
+    readFile(code,codearr)
+    readFile(symTable,symbarr)
+    readFile(locctr,locarr)
+    readFile(litTable,litarr)
+    print(litarr)
+    objectCode()
 
