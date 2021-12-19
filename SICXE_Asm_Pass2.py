@@ -26,9 +26,6 @@ def objectCode():
         elif(i[1]=="LTORG" or i[1]=="END"):#generate pool Tabel
             Line_Number+=1
             generateLiteral(Literal_Pool,ObjArr)
-            # for i in Literal_Pool:
-            #     if  i[1] != None:
-                    # ObjArr.append(i[1])
         elif(i[1]=="RSUB"):
             Line_Number+=1
             ObjArr.append("4F0000")
@@ -66,11 +63,12 @@ def objectCode():
                     Flags_Disp_Add=""
                     if (Format_Flag):#then we are format 3 or lower we check for addressing type now
                         if(any(not c.isalnum() for c in i[2]) and not (',' in i[2])):#we got special type , format 2 or up since format 1 have 0 operands
-                        #if(i[2]!=''):
                             if(i[2][0]=="#"):
                                 opCode=hex(int(opCode,16)+1)[2:].upper()
-                                Flags_Disp_Add=calcAddress(Line_Number,Label)
-                                #ObjArr.append(opCode+Flags_Disp_Add)
+                                if(i[2][1].isdigit()):#check if its constant
+                                    Flags_Disp_Add=hex(int(i[2][1:]))[2:].zfill(4)
+                                else:#address
+                                    Flags_Disp_Add=calcAddress(Line_Number,Label)
                                 break
                             elif(i[2][0]=="@"):
                                 opCode=hex(int(opCode,16)+2)[2:]
@@ -81,6 +79,7 @@ def objectCode():
                                     Literal_Pool.append([i[2],None])
                                 elif(not i[2] in Literal_Pool[0]):
                                     Literal_Pool.append([i[2],None])
+                                Flags_Disp_Add=calcAddress(Line_Number,i[2])
                                 continue
                                 #break
                         else:#simple addressing and format 1,2 handling
@@ -97,10 +96,11 @@ def objectCode():
                                 Flags_Disp_Add=calcAddress(Line_Number,Label)
                             break
                     else:#format 4 or special one
-                        pass
+                        pass#ahh sheet here we go again
                 elif(Line_Number==codearr.__len__() and instruction!=j[0]):#doesn't exist
                     raise Exception("Instruction Not Found")
             ObjArr.append(opCode+Flags_Disp_Add)
+    #ObjArr.remove('') no need it was for =13 literal
     print(ObjArr)
 
 def HTE():
@@ -111,17 +111,21 @@ def calcAddress(Line_Number,Label):
     Flags="2"#PC by default
     DispFlags_Displacement=""#Calculate PC or Base
     flag=1
-    src=int(locarr[Line_Number ][0][2:],16)
+    src=int(locarr[Line_Number][0][2:],16)
     dest=""
     if(',X' in Label):#Check for ,X
         Label=Label.rstrip(',X')
         Flags=Flags.replace(Flags,hex(int(Flags,16) + 8)[2:].upper())
-    if (Label[0] == "="):#literal
-        return ""
+    if (Label[0] == "="):#literal addressing
+        for i in litarr:#check for label in the literal
+            if (Label==i[0]):
+                flag=0
+                dest=int(i[1][2:],16)
     for i in symbarr:#check for symbol in symbol table first
         if(Label==i[0]):
             dest=int(i[1][2:],16)
             flag=0
+
     if(flag):#symbol not found
         raise Exception("A very specific bad thing happened, but I won't tell you what it is.")
     if(dest - src <= 2047):
@@ -142,19 +146,6 @@ def getBase(Label):
     for i in symbarr:#check if label exists in the symbolTable
         if (i[0]==Label):
             return i[1][2:]
-
-
-            # data = i[2].split(",")
-            # j=data[0]
-            # if(j[0]=="C"):
-            #     for z in j[1:]:
-            #         if(z != "'"):
-            #             Flags_Disp_Add+=hex(ord(z))[2:].upper()
-            # elif(j[0]=="X"):
-            #     for z in j[1:]:
-            #         if(z != "'"):
-            #             Flags_Disp_Add+=z
-            # ObjArr.append(Flags_Disp_Add.upper())
 
 
 def generateLiteral(Literalpool,Objarr):
