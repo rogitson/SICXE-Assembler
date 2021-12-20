@@ -96,7 +96,14 @@ def objectCode():
                                 Flags_Disp_Add=calcAddress(Line_Number,Label)
                             break
                     else:#format 4 or special one
-                        pass#ahh sheet here we go again
+                        if(i[1][0] == "+" or i[1][0] == "$"):
+                            opCode=hex(int(opCode,16)+3)[2:].zfill(2).upper() #This needs to go
+                        Flags_Disp_Add=calcAddress(Line_Number,Label)
+                        if(i[1][0] == "&"):
+                            if(int(Flags_Disp_Add[1:], 16) % 2 == 0):
+                                opCode=hex(int(opCode,16)+2)[2:].zfill(2).upper() #This needs to go
+                            if(twos_complement(int(Flags_Disp_Add[1:], 16), 3) < 0):
+                                opCode=hex(int(opCode,16)+1)[2:].zfill(2).upper() #This needs to go
                 elif(Line_Number==codearr.__len__() and instruction!=j[0]):#doesn't exist
                     raise Exception("Instruction Not Found")
             ObjArr.append(opCode+Flags_Disp_Add)
@@ -109,7 +116,7 @@ def HTE():
 
 def calcAddress(Line_Number,Label):
     Flags="2"#PC by default
-    DispFlags_Displacement=""#Calculate PC or Base
+    Flags_Disp=""#Calculate PC or Base
     flag=1
     src=int(locarr[Line_Number][0][2:],16)
     dest=""
@@ -128,17 +135,31 @@ def calcAddress(Line_Number,Label):
 
     if(flag):#symbol not found
         raise Exception("A very specific bad thing happened, but I won't tell you what it is.")
-    if(dest - src <= 2047):
+    if(codearr[Line_Number-1][1][0] == "+"): #Format 4
+        Flags=Flags.replace(Flags,hex(int(Flags,16) -2 + 1)[2:].upper()) #-p +e
+        Flags_Disp = Flags + hex(dest)[2:].zfill(5).upper()
+    elif(codearr[Line_Number-1][1][0] == "$"): #Mystery 6
+        Flags=Flags.replace(Flags,hex(int(Flags,16) - 2)[2:].upper()) #-p
+        if(dest % 2 != 0):
+            Flags=Flags.replace(Flags,hex(int(Flags,16) + 4)[2:].upper()) #+F4
+        if(dest != 0):
+            Flags=Flags.replace(Flags,hex(int(Flags,16) + 2)[2:].upper()) #+F5
+        if(dest != base):
+            Flags=Flags.replace(Flags,hex(int(Flags,16) + 1)[2:].upper()) #+F6
+        Flags_Disp = Flags + hex(dest)[2:].zfill(5).upper()
+    elif(dest - src <= 2047): #PC relative
         if(dest-src <0):
             Flags_Disp=Flags + hex((dest-src) & (2**32-1))[7:].upper()
         else:
             Flags_Disp=Flags + hex(dest-src)[2:].zfill(3).upper()
-    elif(dest-base <= 4095):
+    elif(dest-base <= 4095): #Base relative
         Flags=Flags.replace(Flags,hex(int(Flags,16) + 4 - 2)[2:].upper())#-2 are the PC relative
         Flags_Disp=Flags + hex(dest-base)[2:].zfill(3).upper()
-        pass
     else:
         raise Exception("invalid address , unreachable")
+    if(codearr[Line_Number-1][1][0] == "&"): #Mystery 5
+        if(Flags_Disp[1:] == "000"):
+            Flags_Disp=hex(int(Flags_Disp[0], 16) + 1)[2:] + "000"
     return Flags_Disp
 
 
@@ -161,6 +182,12 @@ def generateLiteral(Literalpool,Objarr):
                      if(z != "'"):
                         i[1]+=z
             ObjArr.append(i[1])
+
+def twos_complement(value,hbits):
+    bits = hbits * 4
+    if value & (1 << (bits-1)):
+        value -= 1 << bits
+    return value
 
 if __name__ == "__main__":
     instructionFile = "in_set.txt"
