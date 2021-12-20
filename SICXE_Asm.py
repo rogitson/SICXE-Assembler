@@ -54,7 +54,7 @@ def passOne():
                     else:
                         steps += 1
                     current_address = hex(int(current_address,16) + steps)
-                    litable.write(e[0] + "\t" + e[1] + "\n")
+                    litable.write("{:8}{:8}{}".format(e[0],e[1],'\n'))
             continue
         elif(i[1] == "BASE"):
             base=current_address
