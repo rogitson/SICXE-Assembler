@@ -1,4 +1,3 @@
-# import sys, getopt
 #For formatting the strings
 def format(str):
     str2=""
@@ -8,22 +7,6 @@ def format(str):
         else:
             str2+=str[i]
     return str2
-
-# For Reading the files , Instructions and Code Input reading
-def readFile(File,Array):
-    for line in File:
-        if(line[0] == '.'):
-            continue
-        line=format(line)
-        col=line.split(" ")
-        if(len(col) == 1):
-            continue
-        elif(len(col) == 2):
-            col[1] = col[1].rstrip("\n")
-            col.append('')
-        else:
-            col[2] = col[2].rstrip("\n")
-        Array.append(col)
 
 def passOne():
     global base
@@ -38,7 +21,9 @@ def passOne():
     start_address=int(codearr[0][2], 16)
     current_address=hex(start_address)
     for i in codearr:
-        locFile.write("{:<8}{:<8}{:8}{:8}{}".format(current_address,i[0],i[1],i[2],'\n'))
+        if(debug):
+            print(i)
+        locFile.write("{:<8}{:<8}{:8}{:8}{}".format("0x" + current_address[2:].zfill(4),i[0],i[1],i[2],'\n'))
         steps = 0
         if(i[1] == "START"):
             continue
@@ -54,7 +39,7 @@ def passOne():
                     else:
                         steps += 1
                     current_address = hex(int(current_address,16) + steps)
-                    litable.write("{:8}{:8}{}".format(e[0],e[1],'\n'))
+                    litable.write("{:8}{:8}{}".format(e[0],"0x" + e[1][2:].zfill(4),'\n'))
             continue
         elif(i[1] == "BASE"):
             base=current_address
@@ -100,7 +85,7 @@ def passOne():
             if(flag):
                 lit.append([i[2],''])
         if(i[0]!=""):
-            symbFile.write("{:10}{:10}{}".format(i[0],current_address,'\n'))
+            symbFile.write("{:10}{:10}{}".format(i[0],"0x" + current_address[2:].zfill(4),'\n'))
         current_address = hex(int(current_address,16) + steps)
     locFile.close()
     litable.close()
@@ -118,7 +103,8 @@ def passTwo():
     Format_Flag=1
     Line_Number=0
     for i in codearr:#Make Condition for EQU
-        print(i)
+        if(debug):
+            print(i)
         Flags_Disp_Add=""
         opCode=""
         if (i[1]=="START" or i[1]=="EQU"):#No object Code
@@ -126,7 +112,7 @@ def passTwo():
             continue
         if(i[1]=="BASE"):#record base label address
             Line_Number+=1
-            base=getBase(i[2])#sending the label infornt of base to get its address
+            base=int(getBase(i[2]),16)#sending the label infornt of base to get its address
         elif(i[1]=="LTORG" or i[1]=="END"):#generate pool Tabel
             Line_Number+=1
             generateLiteral(Literal_Pool,ObjArr)
@@ -186,11 +172,11 @@ def passTwo():
                         #break
                 else:#simple addressing and format 1,2 handling
                     if(j[0]=="1" or j[0]=="2"):
-                        opCode=j[2]# format 2 needs handling
+                        opCode=j[1]# format 2 needs handling
                         if(j[0]=="2"):
                             sl=i[2].split(',')
                             if(len(sl)==1):
-                                sl[1]="A"
+                                sl.append("A")
                             Flags_Disp_Add+=Registers[sl[0]] + Registers[sl[1]]
                         #ObjArr.append(opCode+Flags_Disp_Add)
                     elif(j[0]=="34"):#format 3
@@ -214,7 +200,6 @@ def passTwo():
 def HTE():
     pass
 
-
 def calcAddress(Line_Number,Label):
     Flags="2"#PC by default
     Flags_Disp=""#Calculate PC or Base
@@ -229,6 +214,8 @@ def calcAddress(Line_Number,Label):
             if (Label==i[0]):
                 flag=0
                 dest=int(i[1][2:],16)
+    # elif (Label[0] in ["#","@","="]):
+    #     Label = Label[1:]
     for i in symbarr:#check for symbol in symbol table first
         if(Label==i[0]):
             dest=int(i[1][2:],16)
@@ -292,8 +279,56 @@ def createInsDict(File, Dict):
         instruction = line.split()
         Dict[instruction[0]] = [instruction[1], instruction[2]]
 
+# For reading the input code
+def readCode(File,Array):
+    for line in File:
+        if(line[0] == '.'):
+            continue
+        col = line.split()
+        if(len(col) == 1):
+            col = ["", col[0].rstrip("\n"), ""]
+        elif(len(col) == 2):
+            col[1] = col[1].rstrip("\n")
+            if col[1] in insDict or col[1] in directives:
+                col = [col[0], col[1], ""]
+            else:
+                col = ["", col[0], col[1]]
+        else:
+            col[2] = col[2].rstrip("\n")
+        Array.append(col)
+
+# For reading the symbol table and literal table
+def readSym(File,Array):
+    for line in File:
+        if(line[0] == '.'):
+            continue
+        col = line.split()
+        col[1] = col[1].rstrip("\n")
+        Array.append(col)
+
+# For reading the location counter
+def readLoc(File,Array):
+    for line in File:
+        if(line[0] == '.'):
+            continue
+        col = line.split()
+        if(len(col) == 2):
+            col = [col[0], "", col[1].rstrip("\n"), ""]
+        elif(len(col) == 3):
+            col[2] = col[2].rstrip("\n")
+            if col[2] in insDict or col[2] in directives:
+                col = [col[0], col[1], col[2], ""]
+            else:
+                col = [col[0], "", col[1], col[2]]
+        else:
+            col[3] = col[3].rstrip("\n")
+        Array.append(col)
+
 if __name__ == "__main__":
+    debug = 1
     base=0
+    directives = ["START", "END", "BASE", "LTORG", "RESW", "RESB"]
+
     codeFile = "in.txt"
     instructionFile = "in_set.txt"
     symbolTable='symbTable.txt'
@@ -302,28 +337,31 @@ if __name__ == "__main__":
 
     ins = open(instructionFile, "r")
     code = open(codeFile,"r")  
+    insDict = {}  
     codearr = []
-    insDict = {}         
-    readFile(code,codearr)
-    createInsDict(ins, insDict)
+    createInsDict(ins, insDict)       
+    readCode(code,codearr)
     ins.close()
     code.close()
     passOne()
+    if(debug):
+        print("Pass One successfully completed!")
 
     ObjArr=[]
-    symTable = open(symbolTable,"r")
     locctr=open(locationCounter,"r")
+    symTable = open(symbolTable,"r")
     litTable=open(literalTable,"r")
-    symbarr=[]
     locarr=[]
+    symbarr=[]
     litarr=[]
-    readFile(symTable,symbarr)
-    readFile(locctr,locarr)
-    readFile(litTable,litarr)
+    readLoc(locctr,locarr)
+    readSym(symTable,symbarr)
+    readSym(litTable,litarr)
     symTable.close()
     locctr.close()
     litTable.close()
-    print(litarr, "NBIGGG")
     passTwo()
+    if(debug):
+        print("Pass Two successfully completed!")
 
-    print("Success!")
+    print("Assembly Success!")
