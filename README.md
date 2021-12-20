@@ -3,7 +3,7 @@ Assembler for the SIC XE, which has absolutely nothing to do with automatic succ
 # Usage
 You must have python installed. To run the code, simply run 
 
-> python SICXE_ASM.py
+> python sasm.py
 
 Ensure you have the input files in the same directory as the python script. The default names for the input files are "in.txt" and "in_set.txt". These names can be changed inside the script.
 
