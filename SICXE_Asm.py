@@ -1,5 +1,4 @@
 # import sys, getopt
-
 #For formatting the strings
 def format(str):
     str2=""
@@ -9,6 +8,7 @@ def format(str):
         else:
             str2+=str[i]
     return str2
+
 # For Reading the files , Instructions and Code Input reading
 def readFile(File,Array):
     for line in File:
@@ -24,18 +24,21 @@ def readFile(File,Array):
         else:
             col[2] = col[2].rstrip("\n")
         Array.append(col)
+
 def passOne():
+    global base
+    #checking for START 
     if(codearr[0][1].upper() != "START"):
         raise Exception("A very unspecific bad thing happened, but I won't tell you what it is.") 
+    #Creating the files for pass 1
     locFile=open("out.txt","w")
     litable = open("litTable.txt", "w")
+    symbFile=open("symbTable.txt","w")
     lit = []
     start_address=int(codearr[0][2], 16)
     current_address=hex(start_address)
     for i in codearr:
-        #Out.write("{:<8}{:<6}".format(hex(Loc),line))
         locFile.write("{:<8}{:<8}{:8}{:8}{}".format(current_address,i[0],i[1],i[2],'\n'))
-        # print(current_address,"\t\t",i[1])
         steps = 0
         if(i[1] == "START"):
             continue
@@ -54,6 +57,7 @@ def passOne():
                     litable.write(e[0] + "\t" + e[1] + "\n")
             continue
         elif(i[1] == "BASE"):
+            base=current_address
             continue
         elif(i[1][0] == "+"):
             steps += 4
@@ -95,72 +99,29 @@ def passOne():
                     flag = False
             if(flag):
                 lit.append([i[2],''])
+        if(i[0]!=""):
+            symbFile.write("{:10}{:10}{}".format(i[0],current_address,'\n'))
         current_address = hex(int(current_address,16) + steps)
     locFile.close()
     litable.close()
-    symbol_table()
-def symbol_table():
-    counter=0
-    symbFile=open("symbTable.txt","w")
-    locFile=open("out.txt","r")
-    Counter_Array= []
-    for i in locFile:
-        row=i.split(' ')
-        Counter_Array.append(row[0])
-    for i in codearr:
-        if(i[0]!=""):
-            symbFile.write("{:10}{:10}{}".format(i[0],Counter_Array[counter],'\n'))
-        counter += 1
     symbFile.close()
-    locFile.close()
-
-# def main(argv):
-#     try:
-#         opts, args = getopt.getopt(argv,"hi:o:",["ifile=","ofile="])
-#     except getopt.GetoptError:
-#         print ('test.py -i <inputfile> -o <outputfile>')
-#         sys.exit(2)
-#     for opt, arg in opts:
-#         if opt in ('-h', "--help"):
-#             print("-h, --help\t-\tprint the help message\n" +
-#             "-i, --input\t-\tinput file\n" +
-#             "-s, --set\t-\tinstruction set file\n" +
-#             "-o, --output\t-\toutput file")
-#             sys.exit()
-#         elif opt in ("-i", "--input"):
-#             inputfile = arg
-#         elif opt in ("-s", "--set"):
-#             instructionFile = arg
-#         elif opt in ("-o", "--output"):
-#             outputfile = arg
 
 def createInsDict(File, Dict):
     for line in File:
         instruction = line.split()
         Dict[instruction[0]] = [instruction[1], instruction[2]]
 
-
 if __name__ == "__main__":
+    base=0
     inputFile = "in.txt"
     instructionFile = "in_set.txt"
-    # inputFile = ''
-    # instructionFile = ''
-    # main(sys.argv[1:])
-
     code = open(inputFile, "r")
     ins = open(instructionFile, "r")
     codearr = []
-    insDict = {}
-            
+    insDict = {}         
     readFile(code,codearr)
     createInsDict(ins, insDict)
-
     passOne()
     print("Success!")
     code.close()
     ins.close()
-
-def hex_to_decimal(number):
-    number=int(hex(number).split('x')[-1])
-    print(number)
-#hex_to_decimal(4096)
