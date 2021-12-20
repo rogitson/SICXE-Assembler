@@ -25,12 +25,11 @@ def readFile(File,Array):
             col[2] = col[2].rstrip("\n")
         Array.append(col)
 
-
 def passOne():
     global base
-    #cheaking for START 
+    #checking for START 
     if(codearr[0][1].upper() != "START"):
-        raise Exception("A very unspecific bad thing happened, but I won't tell you what it is.")
+        raise Exception("A very unspecific bad thing happened, but I won't tell you what it is.") 
     #Creating the files for pass 1
     locFile=open("out.txt","w")
     litable = open("litTable.txt", "w")
@@ -41,7 +40,9 @@ def passOne():
     for i in codearr:
         locFile.write("{:<8}{:<8}{:8}{:8}{}".format(current_address,i[0],i[1],i[2],'\n'))
         steps = 0
-        if(i[1] == "LTORG" or i[1] == "END"):
+        if(i[1] == "START"):
+            continue
+        elif(i[1] == "LTORG" or i[1] == "END"):
             for e in lit:
                 if(e[1] == ''):
                     steps = 0
@@ -53,7 +54,7 @@ def passOne():
                     else:
                         steps += 1
                     current_address = hex(int(current_address,16) + steps)
-                    litable.write("{:8}{:8}{}".format(e[0],e[1],'\n'))
+                    litable.write(e[0] + "\t" + e[1] + "\n")
             continue
         elif(i[1] == "BASE"):
             base=current_address
@@ -70,28 +71,27 @@ def passOne():
                 steps += 3
         elif(i[1]=="BYTE"):
             data = i[2].split(",")
-            j=data[0]
-            if(j[0]=="C"):
-                for z in j[1:]:
-                    if(z != "'"):
-                        steps += 1
-            else:
-                steps += 1
+            for j in data:
+                if(j[0]=="C"):
+                    for z in j[1:]:
+                        if(z != "'"):
+                            steps += 1
+                else:
+                    steps += 1
         elif(i[1]=="RESW"):
             steps += int(i[2]) * 3
         elif(i[1]=="RESB"):
             steps += int(i[2])
-        for j in insarr:
-            if(i[1]==j[0]):
-                if(i[1] == "RSUB"):
-                    if(i[2] != ''):
-                        raise Exception("A very specific bad thing happened, but I won't tell you what it is.")
-                if(j[1]=="1"):
-                    steps += 1
-                elif(j[1]=="2"):
-                    steps += 2
-                elif(j[1]=="34"):
-                    steps += 3
+        elif(i[1] == "RSUB"):
+            if(i[2] != ''):
+                raise Exception("A very specific bad thing happened, but I won't tell you what it is.")
+            steps += 3
+        elif(insDict[i[1]][0]=="1"):
+            steps += 1
+        elif(insDict[i[1]][0]=="2"):
+            steps += 2
+        elif(insDict[i[1]][0]=="34"):
+            steps += 3
         if(i[2] != '' and i[2][0] == "="):
             flag = True
             for e in lit:
@@ -106,7 +106,10 @@ def passOne():
     litable.close()
     symbFile.close()
 
-
+def createInsDict(File, Dict):
+    for line in File:
+        instruction = line.split()
+        Dict[instruction[0]] = [instruction[1], instruction[2]]
 
 if __name__ == "__main__":
     base=0
@@ -115,9 +118,9 @@ if __name__ == "__main__":
     code = open(inputFile, "r")
     ins = open(instructionFile, "r")
     codearr = []
-    insarr = []
+    insDict = {}         
     readFile(code,codearr)
-    readFile(ins,insarr)
+    createInsDict(ins, insDict)
     passOne()
     print("Success!")
     code.close()
