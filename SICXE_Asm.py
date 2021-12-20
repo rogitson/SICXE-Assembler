@@ -37,7 +37,9 @@ def passOne():
         locFile.write("{:<8}{:<8}{:8}{:8}{}".format(current_address,i[0],i[1],i[2],'\n'))
         # print(current_address,"\t\t",i[1])
         steps = 0
-        if(i[1] == "LTORG" or i[1] == "END"):
+        if(i[1] == "START"):
+            continue
+        elif(i[1] == "LTORG" or i[1] == "END"):
             for e in lit:
                 if(e[1] == ''):
                     steps = 0
@@ -76,17 +78,16 @@ def passOne():
             steps += int(i[2]) * 3
         elif(i[1]=="RESB"):
             steps += int(i[2])
-        for j in insarr:
-            if(i[1]==j[0]):
-                if(i[1] == "RSUB"):
-                    if(i[2] != ''):
-                        raise Exception("A very specific bad thing happened, but I won't tell you what it is.")
-                if(j[1]=="1"):
-                    steps += 1
-                elif(j[1]=="2"):
-                    steps += 2
-                elif(j[1]=="34"):
-                    steps += 3
+        elif(i[1] == "RSUB"):
+            if(i[2] != ''):
+                raise Exception("A very specific bad thing happened, but I won't tell you what it is.")
+            steps += 3
+        elif(insDict[i[1]][0]=="1"):
+            steps += 1
+        elif(insDict[i[1]][0]=="2"):
+            steps += 2
+        elif(insDict[i[1]][0]=="34"):
+            steps += 3
         if(i[2] != '' and i[2][0] == "="):
             flag = True
             for e in lit:
@@ -133,6 +134,12 @@ def symbol_table():
 #         elif opt in ("-o", "--output"):
 #             outputfile = arg
 
+def createInsDict(File, Dict):
+    for line in File:
+        instruction = line.split()
+        Dict[instruction[0]] = [instruction[1], instruction[2]]
+
+
 if __name__ == "__main__":
     inputFile = "in.txt"
     instructionFile = "in_set.txt"
@@ -143,10 +150,10 @@ if __name__ == "__main__":
     code = open(inputFile, "r")
     ins = open(instructionFile, "r")
     codearr = []
-    insarr = []
+    insDict = {}
             
     readFile(code,codearr)
-    readFile(ins,insarr)
+    createInsDict(ins, insDict)
 
     passOne()
     print("Success!")
