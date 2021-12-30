@@ -10,6 +10,7 @@ def format(str):
 
 def passOne():
     global base
+    global baseFlag
     #checking for START 
     if(codearr[0][1].upper() != "START"):
         raise Exception("A very unspecific bad thing happened, but I won't tell you what it is.") 
@@ -42,7 +43,11 @@ def passOne():
                     litable.write("{:8}{:8}{}".format(e[0],"0x" + e[1][2:].zfill(4),'\n'))
             continue
         elif(i[1] == "BASE"):
-            base=current_address
+            if(i[2] == "*"):
+                base = int(current_address,16)
+                baseFlag = 0
+            else:
+                base = i[2]
             continue
         elif(i[1][0] == "+"):
             steps += 4
@@ -93,7 +98,9 @@ def passOne():
 
 def passTwo():
     objectCodeFile=open("Objectout.txt","w")
-    global base
+    global base, baseFlag
+    if(baseFlag):
+        base = int(getAddress(base), 16)
     Formats=["$","+","&"]
     AddressingTypes=["#","@","="]
     Literal_Pool=[]
@@ -107,12 +114,9 @@ def passTwo():
             print(i)
         Flags_Disp_Add=""
         opCode=""
-        if (i[1]=="START" or i[1]=="EQU"):#No object Code
+        if (i[1]=="START" or i[1]=="EQU" or i[1] == "BASE"):#No object Code
             Line_Number+=1
             continue
-        if(i[1]=="BASE"):#record base label address
-            Line_Number+=1
-            base=int(getBase(i[2]),16)#sending the label infornt of base to get its address
         elif(i[1]=="LTORG" or i[1]=="END"):#generate pool Tabel
             Line_Number+=1
             generateLiteral(Literal_Pool,ObjArr)
@@ -251,10 +255,11 @@ def calcAddress(Line_Number,Label):
             Flags_Disp=hex(int(Flags_Disp[0], 16) + 1)[2:] + "000"
     return Flags_Disp
 
-def getBase(Label):
+def getAddress(Label):
     for i in symbarr:#check if label exists in the symbolTable
         if (i[0]==Label):
             return i[1][2:]
+    raise Exception("Label not found in Symbol Table")
 
 def generateLiteral(Literalpool,Objarr):
     for i in Literalpool:
@@ -328,7 +333,8 @@ def readLoc(File,Array):
 
 if __name__ == "__main__":
     debug = 1
-    base=0
+    base = 0
+    baseFlag = 1 
     directives = ["START", "END", "BASE", "LTORG", "RESW", "RESB"]
 
     codeFile = "in.txt"
