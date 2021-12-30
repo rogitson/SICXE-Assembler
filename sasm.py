@@ -125,9 +125,12 @@ def passTwo():
         elif(i[1]=="RSUB"):
             Line_Number+=1
             ObjArr.append("4F0000")
+            objectCodeFile.write("{:10}{:10}{:10}{:10}{}".format(locarr[Line_Number][0][2:],i[1],i[2],ObjArr[len(ObjArr)-1],"\n"))
+            #objectCodeFile.write(locarr[Line_Number][0]+"\t"+i[1]+"\t"+i[2]+"4F0000"+"\n")
         elif(i[1]=="WORD"):
             Line_Number+=1
-            ObjArr.append(hex((int(i[2])& (2**32-1)))[4:].zfill(6).upper())
+            ObjArr.append(hex((int(i[2])& (2**32-1)))[2:].zfill(6).upper())# issue here with negative and positive[2:] or [4:]
+            objectCodeFile.write("{:10}{:10}{:10}{:10}{}".format(locarr[Line_Number][0][2:],i[1],i[2],ObjArr[len(ObjArr)-1],"\n"))
         elif(i[1]=="EXTREF"):
             Line_Number+=1
             extRef.append(i[2])
@@ -151,6 +154,7 @@ def passTwo():
                     if(z != "'"):
                         Flags_Disp_Add+=z
             ObjArr.append(Flags_Disp_Add.upper())
+            objectCodeFile.write("{:10}{:10}{:10}{:10}{}".format(locarr[Line_Number][0][2:],i[1],i[2],ObjArr[len(ObjArr)-1],"\n"))
         elif(i[1]=="RESW" or i[1]=="RESB"):
             Line_Number+=1
             continue
@@ -205,6 +209,7 @@ def passTwo():
                 # elif(Line_Number==codearr.__len__() and instruction!=j[0]):#doesn't exist
                 #     raise Exception("Instruction Not Found")
             ObjArr.append(opCode+Flags_Disp_Add)
+            objectCodeFile.write("{:10}{:10}{:10}{:10}{}".format(locarr[Line_Number][0][2:],i[1],i[2],ObjArr[len(ObjArr)-1],"\n"))
     #ObjArr.remove('') no need it was for =13 literal
     print(ObjArr)
     HTE(extDef,extRef)
@@ -220,7 +225,7 @@ def HTE(extDef,extRef):
     Dlabel=Dlabel[:len(Dlabel)-1]
     #External Refs
     for i in extRef:
-        Rlabel+='{:6}.'.format(i)
+        Rlabel+='{s:{c}^{n}}.'.format(s=i,n=6,c='_')
     Rlabel=Rlabel[:len(Rlabel)-1]
     HR="H."+ codearr[0][2].zfill(6).upper() + "." + locarr[len(locarr) - 1][0][2:].zfill(6).upper()
     DR="D."+ Dlabel
