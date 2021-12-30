@@ -156,20 +156,20 @@ def passTwo():
             #     if(instruction==j[0]):#Doesn't need Stripping
             opCode=j[1]#any(AddressingTypes in i[2] for AddressingTypes in i[1])
             Flags_Disp_Add=""
-            if(i[2][0]=="#"):
+            if(i[2] and i[2][0]=="#"):
                 opCode=hex(int(opCode,16)+1)[2:].zfill(2).upper()
-            elif(i[2][0]=="@"):
+            elif(i[2] and i[2][0]=="@"):
                 opCode=hex(int(opCode,16)+2)[2:].zfill(2).upper()
             else:
                 opCode=hex(int(opCode,16)+3)[2:].zfill(2).upper()
-            if(i[2][0]=="="):#literal , store it in the array
+            if(i[2] and i[2][0]=="="):#literal , store it in the array
                 if(not Literal_Pool):
                     Literal_Pool.append([i[2],None])
                 elif(not i[2] in Literal_Pool[0]):
                     Literal_Pool.append([i[2],None])
                 print(i[2])
                 Flags_Disp_Add=calcAddress(Line_Number,i[2])
-            elif(i[2][0]=="#" and i[2][1].isdigit()):#check if its constant
+            elif(i[2] and i[2][0]=="#" and i[2][1].isdigit()):#check if its constant
                 Flags_Disp_Add=hex(int(i[2][1:]))[2:].zfill(4) #This needs to gooooooo
             elif(Format_Flag):#then we are format 3 or lower we check for addressing type now
                 if(j[0]=="1" or j[0]=="2"):
@@ -185,6 +185,7 @@ def passTwo():
             else:#format 4 or special one
                 Flags_Disp_Add=calcAddress(Line_Number,Label)
                 if(i[1][0] == "&"):
+                    opCode = hex(int(opCode,16)-3)[2:].zfill(2).upper()
                     if(int(Flags_Disp_Add[1:], 16) % 2 == 0):
                         opCode=hex(int(opCode,16)+2)[2:].zfill(2).upper() #This needs to go
                     if(twos_complement(int(Flags_Disp_Add[1:], 16), 3) < 0):
