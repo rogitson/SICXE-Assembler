@@ -26,7 +26,7 @@ def passOne():
             print(i)
         locFile.write("{:<8}{:<8}{:8}{:8}{}".format("0x" + current_address[2:].zfill(4),i[0],i[1],i[2],'\n'))
         steps = 0
-        if(i[1] == "START"):
+        if(i[1] == "START" or i[1] == "EXTDEF" or i[1]=="EXTREF"):
             continue
         elif(i[1] == "LTORG" or i[1] == "END"):
             for e in lit:
@@ -99,6 +99,8 @@ def passOne():
 def passTwo():
     objectCodeFile=open("Objectout.txt","w")
     global base, baseFlag
+    extRef=[]
+    extDef=[]
     if(baseFlag):
         base = int(getAddress(base), 16)
     Formats=["$","+","&"]
@@ -126,6 +128,16 @@ def passTwo():
         elif(i[1]=="WORD"):
             Line_Number+=1
             ObjArr.append(hex((int(i[2])& (2**32-1)))[4:].zfill(6).upper())
+        elif(i[1]=="EXTREF"):
+            Line_Number+=1
+            extRef.append(i[2])
+        elif(i[1]=="EXTDEF"):
+            Line_Number+=1
+            labels=i[2].split(',')
+            for k in symbarr:
+                for l in labels:
+                    if(l==k[0]):
+                        extDef.append([l,k[1]]) 
         elif(i[1]=="BYTE"):
             Line_Number+=1
             data = i[2].split(",")
@@ -195,11 +207,26 @@ def passTwo():
             ObjArr.append(opCode+Flags_Disp_Add)
     #ObjArr.remove('') no need it was for =13 literal
     print(ObjArr)
+    HTE(extDef,extRef)
 
-def HTE():
+
+def HTE(extDef,extRef):
+    extRef=extRef[0].split(',')
+    Dlabel=""
+    Rlabel=""
+    #External Defs
+    for i in extDef:
+        Dlabel+='{:6}.{}.'.format(i[0],i[1][2:].zfill(6).upper())
+    Dlabel=Dlabel[:len(Dlabel)-1]
+    #External Refs
+    for i in extRef:
+        Rlabel+='{:6}.'.format(i)
+    Rlabel=Rlabel[:len(Rlabel)-1]
     HR="H."+ codearr[0][2].zfill(6).upper() + "." + locarr[len(locarr) - 1][0][2:].zfill(6).upper()
+    DR="D."+ Dlabel
+    RR="R."+ Rlabel
     ER="E."+ codearr[0][2].zfill(6).upper()
-    pass
+    print(HR,DR,RR,ER,sep='\n')
 
 def calcAddress(Line_Number,Label):
     Flags="2"#PC by default
