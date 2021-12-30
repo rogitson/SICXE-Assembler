@@ -3,6 +3,7 @@
 ### Todo
 
 - [ ] Fix interaction between addressing modes and Formats 4+  
+- [ ] Fix literals
 
 ### In Progress
 
