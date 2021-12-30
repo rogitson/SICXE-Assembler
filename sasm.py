@@ -198,6 +198,8 @@ def passTwo():
     print(ObjArr)
 
 def HTE():
+    HR="H."+ codearr[0][2].zfill(6).upper() + "." + locarr[len(locarr) - 1][0][2:].zfill(6).upper()
+    ER="E."+ codearr[0][2].zfill(6).upper()
     pass
 
 def calcAddress(Line_Number,Label):
