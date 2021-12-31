@@ -298,6 +298,7 @@ def passTwo():
 
 def HTE(extDef,extRef):
     global objCodeFile, objFile
+    print(extDef,extRef)
     obj = open(objCodeFile, "r")
     objarr = readObj(obj)
     obj.close()
@@ -353,9 +354,18 @@ def HTE(extDef,extRef):
         if(i == len(objarr)):
             T_Con=T_Con[:len(T_Con)-1]
             T_Rec.append((T_Start+"{:2}.".format(hex(T_Size)[2:].zfill(2))+T_Con).upper())
-    print(T_Rec)
+    M_Rec=[]
+    M_Address=""
+    M_Bytes=""
+    i=0
+    for  e in objarr:
+        if(len(e[1])==8):
+            M_Address=hex(int(e[0],16) + 1)[2:].zfill(6)
+            M_Bytes=5
+            M_Rec.append("M.{:6}.{:6}+{:6}".format(M_Address.zfill(6),hex(M_Bytes)[2:].zfill(6),codearr[0][0]))
+        i+=1 
     ER="E."+ codearr[0][2].zfill(6).upper()
-    for element in [HR, DR, RR,*T_Rec, ER,]:
+    for element in [HR, DR, RR,*T_Rec,*M_Rec, ER,]:
         print(element)
         obj.write(element + '\n')
     obj.close()
