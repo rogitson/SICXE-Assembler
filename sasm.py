@@ -85,7 +85,7 @@ def passOne():
     global base, baseFlag, symbolTable, locationCounter, literalTable
     # Checking for START 
     if(codearr[0][1].upper() != "START"):
-        raise Exception("A very unspecific bad thing happened, but I won't tell you what it is.") 
+        raise Exception("Program doesn't have a START") 
     # Creating the files for pass 1
     locFile=open(locationCounter,"w")
     litable = open(literalTable, "w")
@@ -146,7 +146,7 @@ def passOne():
             steps += int(i[2])
         elif(i[1] == "RSUB"):
             if(i[2] != ''):
-                raise Exception("A very specific bad thing happened, but I won't tell you what it is.")
+                raise Exception("Address next to RSUB")
             steps += 3
         elif(insDict[i[1]][0]=="1"):
             steps += 1
@@ -286,7 +286,6 @@ def passTwo():
     print(objarr)
     HTE(extDef,extRef)
 
-
 def HTE(extDef,extRef):
     global objCodeFile, objFile
     obj = open(objCodeFile, "r")
@@ -294,8 +293,7 @@ def HTE(extDef,extRef):
     obj.close()
     obj = open(objFile, "w")
     if(debug):
-        for e in objarr:
-            print(e)
+        print(objarr)
     if(extRef):
         extRef=extRef[0].split(',')
     Dlabel=""
@@ -339,7 +337,7 @@ def calcAddress(PC,Label):
             dest=int(i[1][2:],16)
             flag=0
     if(flag):#symbol not found
-        raise Exception("A very specific bad thing happened, but I won't tell you what it is.")
+        raise Exception("Label not found in Symbol Table")
     if(codearr[PC-1][1][0] == "+"): #Format 4
         Flags=Flags.replace(Flags,hex(int(Flags,16) -2 + 1)[2:].upper()) #-p +e
         Flags_Disp = Flags + hex(dest)[2:].zfill(5).upper()
@@ -352,16 +350,16 @@ def calcAddress(PC,Label):
         if(dest != base):
             Flags=Flags.replace(Flags,hex(int(Flags,16) + 1)[2:].upper()) #+F6
         Flags_Disp = Flags + hex(dest)[2:].zfill(5).upper()
-    elif(dest - src <= 2047 and dest - src >= -2047): #PC relative
+    elif(dest - src <= 2048 and dest - src >= -2048): #PC relative
         if(dest-src <0):
             Flags_Disp=Flags + hex((dest-src) & (2**32-1))[7:].upper()
         else:
             Flags_Disp=Flags + hex(dest-src)[2:].zfill(3).upper()
-    elif(dest-base <= 4095): #Base relative
+    elif(dest-base <= 4096): #Base relative
         Flags=Flags.replace(Flags,hex(int(Flags,16) + 4 - 2)[2:].upper())#-2 are the PC relative
         Flags_Disp=Flags + hex(dest-base)[2:].zfill(3).upper()
     else:
-        raise Exception("invalid address , unreachable")
+        raise Exception("Address is unreachable")
     if(codearr[PC-1][1][0] == "&"): #Mystery 5
         if(Flags_Disp[1:] == "000"):
             Flags_Disp=hex(int(Flags_Disp[0], 16) + 1)[2:] + "000"
