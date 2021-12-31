@@ -1,4 +1,5 @@
 #For formatting the strings
+
 def format(str):
     str2=""
     for i in range(len(str)):
@@ -77,6 +78,10 @@ def readObj(File):
         if(line[0] == '.'):
             continue
         col = line.split()
+        if(col[1] in directives):
+            if(col[1] == "RESW" or col[1]=="RESB"):
+                Array.append(["RESERVED","BORW"])
+            continue
         col = [col[0], col[len(col) - 1]]
         Array.append(col)
     return Array
@@ -195,25 +200,29 @@ def passTwo():
         Flags_Disp_Add=""
         opCode=""
         if (i[1]=="START" or i[1]=="EQU" or i[1] == "BASE"):#No object Code
+            obj.write("{:10}{:10}{:10}{:10}{}".format(locarr[PC - 1][0][2:],i[1],i[2],"","\n"))
             continue
         elif(i[1]=="LTORG" or i[1]=="END"):#generate pool Table
+            obj.write("{:10}{:10}{:10}{:10}{}".format(locarr[PC - 1][0][2:],i[1],i[2],"","\n"))
             generateLiteral(Literal_Pool, obj, objarr, PC)
             continue
         elif(i[1]=="RSUB"):
             objarr.append("4F0000")
-            obj.write("{:10}{:10}{:10}{:10}{}".format("0x" + locarr[PC - 1][0][2:],i[1],i[2],objarr[len(objarr)-1],"\n"))
+            obj.write("{:10}{:10}{:10}{:10}{}".format(locarr[PC - 1][0][2:],i[1],i[2],objarr[len(objarr)-1],"\n"))
             #obj.write(locarr[PC][0]+"\t"+i[1]+"\t"+i[2]+"4F0000"+"\n")
         elif(i[1]=="WORD"):
             objarr.append(hex((int(i[2])& (2**32-1)))[2:].zfill(6).upper())# issue here with negative and positive[2:] or [4:]
-            obj.write("{:10}{:10}{:10}{:10}{}".format("0x" + locarr[PC - 1][0][2:],i[1],i[2],objarr[len(objarr)-1],"\n"))
+            obj.write("{:10}{:10}{:10}{:10}{}".format(locarr[PC - 1][0][2:],i[1],i[2],objarr[len(objarr)-1],"\n"))
         elif(i[1]=="EXTREF"):
             extRef.append(i[2])
+            obj.write("{:10}{:10}{:10}{:10}{}".format(locarr[PC - 1][0][2:],i[1],i[2],"","\n"))
         elif(i[1]=="EXTDEF"):
             labels=i[2].split(',')
             for k in symbarr:
                 for l in labels:
                     if(l==k[0]):
                         extDef.append([l,k[1]]) 
+            obj.write("{:10}{:10}{:10}{:10}{}".format(locarr[PC - 1][0][2:],i[1],i[2],"","\n"))
         elif(i[1]=="BYTE"):
             data = i[2].split(",")
             j=data[0]
@@ -226,8 +235,9 @@ def passTwo():
                     if(z != "'"):
                         Flags_Disp_Add+=z
             objarr.append(Flags_Disp_Add.upper())
-            obj.write("{:10}{:10}{:10}{:10}{}".format("0x" + locarr[PC - 1][0][2:],i[1],i[2],objarr[len(objarr)-1],"\n"))
+            obj.write("{:10}{:10}{:10}{:10}{}".format(locarr[PC - 1][0][2:],i[1],i[2],objarr[len(objarr)-1],"\n"))
         elif(i[1]=="RESW" or i[1]=="RESB"):
+            obj.write("{:10}{:10}{:10}{}".format(locarr[PC - 1][0][2:],i[1],i[2],"\n"))
             continue
         else:
             #check for instruction first
@@ -281,7 +291,7 @@ def passTwo():
                 # elif(PC==codearr.__len__() and instruction!=j[0]):#doesn't exist
                 #     raise Exception("Instruction Not Found")
             objarr.append(opCode+Flags_Disp_Add)
-            obj.write("{:10}{:10}{:10}{:10}{}".format("0x" + locarr[PC - 1][0][2:],i[1],i[2],objarr[len(objarr)-1],"\n"))
+            obj.write("{:10}{:10}{:10}{:10}{}".format(locarr[PC - 1][0][2:],i[1],i[2],objarr[len(objarr)-1],"\n"))
     obj.close()
     print(objarr)
     HTE(extDef,extRef)
@@ -309,11 +319,45 @@ def HTE(extDef,extRef):
     HR="H."+ codearr[0][2].zfill(6).upper() + "." + locarr[len(locarr) - 1][0][2:].zfill(6).upper()
     DR="D."+ Dlabel
     RR="R."+ Rlabel
+    T_Size=0
+    T_Flag=1
+    T_Rec=[]
+    BORW_Flag=1
+    i=0
+    while(i < len(objarr)):
+        e=objarr[i]
+        if (e[1] == "BORW"):
+            if(BORW_Flag):
+                T_Con=T_Con[:len(T_Con)-1]
+                T_Rec.append((T_Start+"{:2}.".format(hex(T_Size)[2:].zfill(2))+T_Con).upper())
+            T_Flag=1
+            T_Size=0
+            BORW_Flag=0
+            i+=1
+            continue
+        elif((T_Size + len(e[1]) / 2) > 30):
+            T_Flag=1
+            T_Con=T_Con[:len(T_Con)-1]
+            T_Rec.append((T_Start+"{:2}.".format(hex(T_Size)[2:].zfill(2))+T_Con).upper())
+            T_Size=0
+            continue
+        if(T_Flag):
+            T_Flag=0
+            BORW_Flag=1
+            T_Start="T.{:6}.".format(e[0].zfill(6))
+            T_Con=""
+        else:
+            T_Con+="{s:{n}}.".format(s=e[1],n=len(e[1]))
+            T_Size+=len(e[1])//2
+            i+=1
+        if(i == len(objarr)):
+            T_Con=T_Con[:len(T_Con)-1]
+            T_Rec.append((T_Start+"{:2}.".format(hex(T_Size)[2:].zfill(2))+T_Con).upper())
+    print(T_Rec)
     ER="E."+ codearr[0][2].zfill(6).upper()
-    for element in [HR, DR, RR, ER]:
+    for element in [HR, DR, RR,*T_Rec, ER,]:
         print(element)
         obj.write(element + '\n')
-    # print(HR,DR,RR,ER,sep='\n')
     obj.close()
 
 def calcAddress(PC,Label):
@@ -393,7 +437,7 @@ def generateLiteral(Literalpool, obj, objarr, PC):
             else:
                 i[1] += hex(int(i[0][1:]))[2:].upper()
             objarr.append(i[1])
-            obj.write("{:10}{:20}{:10}{}".format("0x" + hex(prevAddress)[2:].zfill(4), i[0], objarr[len(objarr)-1],"\n"))
+            obj.write("{:10}{:20}{:10}{}".format(hex(prevAddress)[2:].zfill(4), i[0], objarr[len(objarr)-1].zfill(2),"\n"))
             prevAddress = currentAddress
 
 def twos_complement(value,hbits):
@@ -403,10 +447,10 @@ def twos_complement(value,hbits):
     return value
 
 if __name__ == "__main__":
-    debug = 1
+    debug = 0
     base = 0
     baseFlag = 1 
-    directives = ["START", "END", "BASE", "LTORG", "RESW", "RESB"] # Array of directives for the read functions
+    directives = ["START", "END", "BASE", "LTORG", "RESW", "RESB","EXTDEF","EXTREF"] # Array of directives for the read functions
 
     codeFile = "in.txt"
     instructionFile = "in_set.txt"
