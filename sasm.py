@@ -225,16 +225,17 @@ def passTwo():
             obj.write("{:10}{:10}{:10}{:10}{}".format(locarr[PC - 1][0][2:],i[1],i[2],"","\n"))
         elif(i[1]=="BYTE"):
             data = i[2].split(",")
-            j=data[0]
-            if(j[0]=="C"):
-                for z in j[1:]:
-                    if(z != "'"):
-                        Flags_Disp_Add+=hex(ord(z))[2:].upper()
-            elif(j[0]=="X"):
-                for z in j[1:]:
-                    if(z != "'"):
-                        Flags_Disp_Add+=z
-            objarr.append(Flags_Disp_Add.upper())
+            for z in data:
+                Flags_Disp_Add=""
+                if(z[0]=="C"):
+                    for x in z[1:]:
+                        if(x != "'"):
+                            Flags_Disp_Add+=hex(ord(x))[2:].upper()
+                elif(z[0]=="X"):
+                    for x in z[1:]:
+                        if(x != "'"):
+                            Flags_Disp_Add+=x
+                objarr.append(Flags_Disp_Add.upper())
             obj.write("{:10}{:10}{:10}{:10}{}".format(locarr[PC - 1][0][2:],i[1],i[2],objarr[len(objarr)-1],"\n"))
         elif(i[1]=="RESW" or i[1]=="RESB"):
             obj.write("{:10}{:10}{:10}{}".format(locarr[PC - 1][0][2:],i[1],i[2],"\n"))
@@ -298,7 +299,6 @@ def passTwo():
 
 def HTE(extDef,extRef):
     global objCodeFile, objFile
-    print(extDef,extRef)
     obj = open(objCodeFile, "r")
     objarr = readObj(obj)
     obj.close()
@@ -364,11 +364,17 @@ def HTE(extDef,extRef):
             M_Bytes=5
             M_Rec.append("M.{:6}.{:6}+{:6}".format(M_Address.zfill(6),hex(M_Bytes)[2:].zfill(6),codearr[0][0]))
         i+=1 
-    ER="E."+ codearr[0][2].zfill(6).upper()
+    ER="E."+getFirstExe()
     for element in [HR, DR, RR,*T_Rec,*M_Rec, ER,]:
-        print(element)
+        #print(element)
         obj.write(element + '\n')
     obj.close()
+
+def getFirstExe():
+    for i in locarr:
+        if i[2] in insDict:
+            return i[0][2:].zfill(6).upper()
+
 
 def calcAddress(PC,Label):
     Flags="2"#PC by default
