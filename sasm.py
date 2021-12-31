@@ -110,39 +110,37 @@ def passTwo():
     opCode=""
     Flags_Disp_Add=""
     Format_Flag=1
-    Line_Number=0
+    PC=0
     for i in codearr:#Make Condition for EQU
+        PC += 1
         if(debug):
-            print(i)
+            try:
+                print(i, "\t", locarr[PC])
+            except:
+                print(i)
         Flags_Disp_Add=""
         opCode=""
         if (i[1]=="START" or i[1]=="EQU" or i[1] == "BASE"):#No object Code
-            Line_Number+=1
             continue
-        elif(i[1]=="LTORG" or i[1]=="END"):#generate pool Tabel
-            Line_Number+=1
-            generateLiteral(Literal_Pool,ObjArr)
+        elif(i[1]=="LTORG" or i[1]=="END"):#generate pool Table
+            generateLiteral(Literal_Pool, objectCodeFile, PC)
+            continue
         elif(i[1]=="RSUB"):
-            Line_Number+=1
             ObjArr.append("4F0000")
-            objectCodeFile.write("{:10}{:10}{:10}{:10}{}".format(locarr[Line_Number][0][2:],i[1],i[2],ObjArr[len(ObjArr)-1],"\n"))
-            #objectCodeFile.write(locarr[Line_Number][0]+"\t"+i[1]+"\t"+i[2]+"4F0000"+"\n")
+            objectCodeFile.write("{:10}{:10}{:10}{:10}{}".format("0x" + locarr[PC - 1][0][2:],i[1],i[2],ObjArr[len(ObjArr)-1],"\n"))
+            #objectCodeFile.write(locarr[PC][0]+"\t"+i[1]+"\t"+i[2]+"4F0000"+"\n")
         elif(i[1]=="WORD"):
-            Line_Number+=1
             ObjArr.append(hex((int(i[2])& (2**32-1)))[2:].zfill(6).upper())# issue here with negative and positive[2:] or [4:]
-            objectCodeFile.write("{:10}{:10}{:10}{:10}{}".format(locarr[Line_Number][0][2:],i[1],i[2],ObjArr[len(ObjArr)-1],"\n"))
+            objectCodeFile.write("{:10}{:10}{:10}{:10}{}".format("0x" + locarr[PC - 1][0][2:],i[1],i[2],ObjArr[len(ObjArr)-1],"\n"))
         elif(i[1]=="EXTREF"):
-            Line_Number+=1
             extRef.append(i[2])
         elif(i[1]=="EXTDEF"):
-            Line_Number+=1
             labels=i[2].split(',')
             for k in symbarr:
                 for l in labels:
                     if(l==k[0]):
                         extDef.append([l,k[1]]) 
         elif(i[1]=="BYTE"):
-            Line_Number+=1
             data = i[2].split(",")
             j=data[0]
             if(j[0]=="C"):
@@ -154,12 +152,10 @@ def passTwo():
                     if(z != "'"):
                         Flags_Disp_Add+=z
             ObjArr.append(Flags_Disp_Add.upper())
-            objectCodeFile.write("{:10}{:10}{:10}{:10}{}".format(locarr[Line_Number][0][2:],i[1],i[2],ObjArr[len(ObjArr)-1],"\n"))
+            objectCodeFile.write("{:10}{:10}{:10}{:10}{}".format("0x" + locarr[PC - 1][0][2:],i[1],i[2],ObjArr[len(ObjArr)-1],"\n"))
         elif(i[1]=="RESW" or i[1]=="RESB"):
-            Line_Number+=1
             continue
         else:
-            Line_Number+=1
             #check for instruction first
             Format_Flag=1
             instruction=i[1]
@@ -186,7 +182,7 @@ def passTwo():
                             litFlag = 0     # Do not append it again to the Lit Pool
                 if(litFlag):
                     Literal_Pool.append([i[2],None])
-                Flags_Disp_Add=calcAddress(Line_Number,i[2])
+                Flags_Disp_Add=calcAddress(PC,i[2])
             elif(i[2] and i[2][0]=="#" and i[2][1].isdigit()):#check if its constant
                 Flags_Disp_Add=hex(int(i[2][1:]))[2:].zfill(4) #This needs to gooooooo
             elif(Format_Flag):#then we are format 3 or lower we check for addressing type now
@@ -199,20 +195,19 @@ def passTwo():
                         Flags_Disp_Add+=Registers[sl[0]] + Registers[sl[1]]
                     #ObjArr.append(opCode+Flags_Disp_Add)
                 elif(j[0]=="34"):#format 3
-                    Flags_Disp_Add=calcAddress(Line_Number,Label)
+                    Flags_Disp_Add=calcAddress(PC,Label)
             else:#format 4 or special one
-                Flags_Disp_Add=calcAddress(Line_Number,Label)
+                Flags_Disp_Add=calcAddress(PC,Label)
                 if(i[1][0] == "&"):
                     opCode = hex(int(opCode,16)-3)[2:].zfill(2).upper()
                     if(int(Flags_Disp_Add[1:], 16) % 2 == 0):
                         opCode=hex(int(opCode,16)+2)[2:].zfill(2).upper() #This needs to go
                     if(twos_complement(int(Flags_Disp_Add[1:], 16), 3) < 0):
                         opCode=hex(int(opCode,16)+1)[2:].zfill(2).upper() #This needs to go
-                # elif(Line_Number==codearr.__len__() and instruction!=j[0]):#doesn't exist
+                # elif(PC==codearr.__len__() and instruction!=j[0]):#doesn't exist
                 #     raise Exception("Instruction Not Found")
             ObjArr.append(opCode+Flags_Disp_Add)
-            objectCodeFile.write("{:10}{:10}{:10}{:10}{}".format(locarr[Line_Number][0][2:],i[1],i[2],ObjArr[len(ObjArr)-1],"\n"))
-    #ObjArr.remove('') no need it was for =13 literal
+            objectCodeFile.write("{:10}{:10}{:10}{:10}{}".format("0x" + locarr[PC - 1][0][2:],i[1],i[2],ObjArr[len(ObjArr)-1],"\n"))
     print(ObjArr)
     HTE(extDef,extRef)
 
@@ -236,11 +231,11 @@ def HTE(extDef,extRef):
     ER="E."+ codearr[0][2].zfill(6).upper()
     print(HR,DR,RR,ER,sep='\n')
 
-def calcAddress(Line_Number,Label):
+def calcAddress(PC,Label):
     Flags="2"#PC by default
     Flags_Disp=""#Calculate PC or Base
     flag=1
-    src=int(locarr[Line_Number][0][2:],16)
+    src=int(locarr[PC][0][2:],16)
     dest=""
     if(',X' in Label):#Check for ,X
         Label=Label.rstrip(',X')
@@ -258,10 +253,10 @@ def calcAddress(Line_Number,Label):
             flag=0
     if(flag):#symbol not found
         raise Exception("A very specific bad thing happened, but I won't tell you what it is.")
-    if(codearr[Line_Number-1][1][0] == "+"): #Format 4
+    if(codearr[PC-1][1][0] == "+"): #Format 4
         Flags=Flags.replace(Flags,hex(int(Flags,16) -2 + 1)[2:].upper()) #-p +e
         Flags_Disp = Flags + hex(dest)[2:].zfill(5).upper()
-    elif(codearr[Line_Number-1][1][0] == "$"): #Mystery 6
+    elif(codearr[PC-1][1][0] == "$"): #Mystery 6
         Flags=Flags.replace(Flags,hex(int(Flags,16) - 2)[2:].upper()) #-p
         if(dest % 2 != 0):
             Flags=Flags.replace(Flags,hex(int(Flags,16) + 4)[2:].upper()) #+F4
@@ -280,7 +275,7 @@ def calcAddress(Line_Number,Label):
         Flags_Disp=Flags + hex(dest-base)[2:].zfill(3).upper()
     else:
         raise Exception("invalid address , unreachable")
-    if(codearr[Line_Number-1][1][0] == "&"): #Mystery 5
+    if(codearr[PC-1][1][0] == "&"): #Mystery 5
         if(Flags_Disp[1:] == "000"):
             Flags_Disp=hex(int(Flags_Disp[0], 16) + 1)[2:] + "000"
     return Flags_Disp
@@ -291,7 +286,9 @@ def getAddress(Label):
             return i[1][2:]
     raise Exception("Label not found in Symbol Table")
 
-def generateLiteral(Literalpool,Objarr):
+def generateLiteral(Literalpool, objectCodeFile, PC):
+    prevAddress = int(locarr[PC - 1][0][2:], 16)
+    currentAddress = prevAddress
     for i in Literalpool:
         if i[1] == None:
             i[1]=""
@@ -299,11 +296,20 @@ def generateLiteral(Literalpool,Objarr):
                 for z in i[0][2:]:
                      if(z != "'"):
                         i[1]+=hex(ord(z))[2:].upper()
+                        currentAddress += 1
             elif(i[0][1]=="X"):
-                 for z in i[0][2:]:
-                     if(z != "'"):
+                counter = 0
+                for z in i[0][2:]:
+                    if(z != "'"):
                         i[1]+=z
+                        counter += 1
+                        if(counter % 2 == 0):
+                            currentAddress += 1
+            else:
+                i[1] += hex(int(i[0][1:]))[2:].upper()
             ObjArr.append(i[1])
+            objectCodeFile.write("{:10}{:20}{:10}{}".format("0x" + hex(prevAddress)[2:].zfill(4), i[0], ObjArr[len(ObjArr)-1],"\n"))
+            prevAddress = currentAddress
 
 def twos_complement(value,hbits):
     bits = hbits * 4
