@@ -3,6 +3,7 @@ out.txt
 symbTable.txt
 litTable.txt
 in_set.txt
-Objectout.txt
+objCode.txt
+out.obj
 __pycache__/
 Testing.py

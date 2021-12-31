@@ -8,16 +8,88 @@ def format(str):
             str2+=str[i]
     return str2
 
+# Creates a dictionary containing all the Instructions and their data
+def createInsDict(File):
+    Dict = {}
+    for line in File:
+        instruction = line.split()
+        Dict[instruction[0]] = [instruction[1], instruction[2]]
+    return Dict
+
+# For reading the input code
+def readCode(File):
+    global directives
+    Array = []
+    for line in File:
+        if(line[0] == '.'):
+            continue
+        col = line.split()
+        if(len(col) == 1):
+            col = ["", col[0].rstrip("\n"), ""]
+        elif(len(col) == 2):
+            col[1] = col[1].rstrip("\n")
+            if col[1] in insDict or col[1] in directives:
+                col = [col[0], col[1], ""]
+            else:
+                col = ["", col[0], col[1]]
+        else:
+            col[2] = col[2].rstrip("\n")
+        Array.append(col)
+    return Array
+
+# For reading the symbol table and literal table
+def readSym(File):
+    Array = []
+    for line in File:
+        if(line[0] == '.'):
+            continue
+        col = line.split()
+        col[1] = col[1].rstrip("\n")
+        Array.append(col)
+    return Array
+
+# For reading the location counter
+def readLoc(File):
+    global directives
+    Array = []
+    for line in File:
+        if(line[0] == '.'):
+            continue
+        col = line.split()
+        if(len(col) == 2):
+            col = [col[0], "", col[1].rstrip("\n"), ""]
+        elif(len(col) == 3):
+            col[2] = col[2].rstrip("\n")
+            if col[2] in insDict or col[2] in directives:
+                col = [col[0], col[1], col[2], ""]
+            else:
+                col = [col[0], "", col[1], col[2]]
+        else:
+            col[3] = col[3].rstrip("\n")
+        Array.append(col)
+    return Array
+
+# Read the object code
+def readObj(File):
+    global directives
+    Array = []
+    for line in File:
+        if(line[0] == '.'):
+            continue
+        col = line.split()
+        col = [col[0], col[len(col) - 1]]
+        Array.append(col)
+    return Array
+
 def passOne():
-    global base
-    global baseFlag
-    #checking for START 
+    global base, baseFlag, symbolTable, locationCounter, literalTable
+    # Checking for START 
     if(codearr[0][1].upper() != "START"):
         raise Exception("A very unspecific bad thing happened, but I won't tell you what it is.") 
-    #Creating the files for pass 1
-    locFile=open("out.txt","w")
-    litable = open("litTable.txt", "w")
-    symbFile=open("symbTable.txt","w")
+    # Creating the files for pass 1
+    locFile=open(locationCounter,"w")
+    litable = open(literalTable, "w")
+    symbFile=open(symbolTable,"w")
     lit = []
     start_address=int(codearr[0][2], 16)
     current_address=hex(start_address)
@@ -92,13 +164,15 @@ def passOne():
         if(i[0]!=""):
             symbFile.write("{:10}{:10}{}".format(i[0],"0x" + current_address[2:].zfill(4),'\n'))
         current_address = hex(int(current_address,16) + steps)
+    # Closing all open files
     locFile.close()
     litable.close()
     symbFile.close()
 
 def passTwo():
-    objectCodeFile=open("Objectout.txt","w")
-    global base, baseFlag
+    global base, baseFlag, objCodeFile
+    obj = open(objCodeFile,"w")
+    objarr = []
     extRef=[]
     extDef=[]
     if(baseFlag):
@@ -110,7 +184,7 @@ def passTwo():
     opCode=""
     Flags_Disp_Add=""
     Format_Flag=1
-    PC=0
+    PC = 0
     for i in codearr:#Make Condition for EQU
         PC += 1
         if(debug):
@@ -123,15 +197,15 @@ def passTwo():
         if (i[1]=="START" or i[1]=="EQU" or i[1] == "BASE"):#No object Code
             continue
         elif(i[1]=="LTORG" or i[1]=="END"):#generate pool Table
-            generateLiteral(Literal_Pool, objectCodeFile, PC)
+            generateLiteral(Literal_Pool, obj, objarr, PC)
             continue
         elif(i[1]=="RSUB"):
-            ObjArr.append("4F0000")
-            objectCodeFile.write("{:10}{:10}{:10}{:10}{}".format("0x" + locarr[PC - 1][0][2:],i[1],i[2],ObjArr[len(ObjArr)-1],"\n"))
-            #objectCodeFile.write(locarr[PC][0]+"\t"+i[1]+"\t"+i[2]+"4F0000"+"\n")
+            objarr.append("4F0000")
+            obj.write("{:10}{:10}{:10}{:10}{}".format("0x" + locarr[PC - 1][0][2:],i[1],i[2],objarr[len(objarr)-1],"\n"))
+            #obj.write(locarr[PC][0]+"\t"+i[1]+"\t"+i[2]+"4F0000"+"\n")
         elif(i[1]=="WORD"):
-            ObjArr.append(hex((int(i[2])& (2**32-1)))[2:].zfill(6).upper())# issue here with negative and positive[2:] or [4:]
-            objectCodeFile.write("{:10}{:10}{:10}{:10}{}".format("0x" + locarr[PC - 1][0][2:],i[1],i[2],ObjArr[len(ObjArr)-1],"\n"))
+            objarr.append(hex((int(i[2])& (2**32-1)))[2:].zfill(6).upper())# issue here with negative and positive[2:] or [4:]
+            obj.write("{:10}{:10}{:10}{:10}{}".format("0x" + locarr[PC - 1][0][2:],i[1],i[2],objarr[len(objarr)-1],"\n"))
         elif(i[1]=="EXTREF"):
             extRef.append(i[2])
         elif(i[1]=="EXTDEF"):
@@ -151,8 +225,8 @@ def passTwo():
                 for z in j[1:]:
                     if(z != "'"):
                         Flags_Disp_Add+=z
-            ObjArr.append(Flags_Disp_Add.upper())
-            objectCodeFile.write("{:10}{:10}{:10}{:10}{}".format("0x" + locarr[PC - 1][0][2:],i[1],i[2],ObjArr[len(ObjArr)-1],"\n"))
+            objarr.append(Flags_Disp_Add.upper())
+            obj.write("{:10}{:10}{:10}{:10}{}".format("0x" + locarr[PC - 1][0][2:],i[1],i[2],objarr[len(objarr)-1],"\n"))
         elif(i[1]=="RESW" or i[1]=="RESB"):
             continue
         else:
@@ -193,7 +267,7 @@ def passTwo():
                         if(len(sl)==1):
                             sl.append("A")
                         Flags_Disp_Add+=Registers[sl[0]] + Registers[sl[1]]
-                    #ObjArr.append(opCode+Flags_Disp_Add)
+                    #objarr.append(opCode+Flags_Disp_Add)
                 elif(j[0]=="34"):#format 3
                     Flags_Disp_Add=calcAddress(PC,Label)
             else:#format 4 or special one
@@ -206,13 +280,22 @@ def passTwo():
                         opCode=hex(int(opCode,16)+1)[2:].zfill(2).upper() #This needs to go
                 # elif(PC==codearr.__len__() and instruction!=j[0]):#doesn't exist
                 #     raise Exception("Instruction Not Found")
-            ObjArr.append(opCode+Flags_Disp_Add)
-            objectCodeFile.write("{:10}{:10}{:10}{:10}{}".format("0x" + locarr[PC - 1][0][2:],i[1],i[2],ObjArr[len(ObjArr)-1],"\n"))
-    print(ObjArr)
+            objarr.append(opCode+Flags_Disp_Add)
+            obj.write("{:10}{:10}{:10}{:10}{}".format("0x" + locarr[PC - 1][0][2:],i[1],i[2],objarr[len(objarr)-1],"\n"))
+    obj.close()
+    print(objarr)
     HTE(extDef,extRef)
 
 
 def HTE(extDef,extRef):
+    global objCodeFile, objFile
+    obj = open(objCodeFile, "r")
+    objarr = readObj(obj)
+    obj.close()
+    obj = open(objFile, "w")
+    if(debug):
+        for e in objarr:
+            print(e)
     if(extRef):
         extRef=extRef[0].split(',')
     Dlabel=""
@@ -229,7 +312,11 @@ def HTE(extDef,extRef):
     DR="D."+ Dlabel
     RR="R."+ Rlabel
     ER="E."+ codearr[0][2].zfill(6).upper()
-    print(HR,DR,RR,ER,sep='\n')
+    for element in [HR, DR, RR, ER]:
+        print(element)
+        obj.write(element + '\n')
+    # print(HR,DR,RR,ER,sep='\n')
+    obj.close()
 
 def calcAddress(PC,Label):
     Flags="2"#PC by default
@@ -286,7 +373,7 @@ def getAddress(Label):
             return i[1][2:]
     raise Exception("Label not found in Symbol Table")
 
-def generateLiteral(Literalpool, objectCodeFile, PC):
+def generateLiteral(Literalpool, obj, objarr, PC):
     prevAddress = int(locarr[PC - 1][0][2:], 16)
     currentAddress = prevAddress
     for i in Literalpool:
@@ -307,8 +394,8 @@ def generateLiteral(Literalpool, objectCodeFile, PC):
                             currentAddress += 1
             else:
                 i[1] += hex(int(i[0][1:]))[2:].upper()
-            ObjArr.append(i[1])
-            objectCodeFile.write("{:10}{:20}{:10}{}".format("0x" + hex(prevAddress)[2:].zfill(4), i[0], ObjArr[len(ObjArr)-1],"\n"))
+            objarr.append(i[1])
+            obj.write("{:10}{:20}{:10}{}".format("0x" + hex(prevAddress)[2:].zfill(4), i[0], objarr[len(objarr)-1],"\n"))
             prevAddress = currentAddress
 
 def twos_complement(value,hbits):
@@ -317,90 +404,36 @@ def twos_complement(value,hbits):
         value -= 1 << bits
     return value
 
-def createInsDict(File, Dict):
-    for line in File:
-        instruction = line.split()
-        Dict[instruction[0]] = [instruction[1], instruction[2]]
-
-# For reading the input code
-def readCode(File,Array):
-    for line in File:
-        if(line[0] == '.'):
-            continue
-        col = line.split()
-        if(len(col) == 1):
-            col = ["", col[0].rstrip("\n"), ""]
-        elif(len(col) == 2):
-            col[1] = col[1].rstrip("\n")
-            if col[1] in insDict or col[1] in directives:
-                col = [col[0], col[1], ""]
-            else:
-                col = ["", col[0], col[1]]
-        else:
-            col[2] = col[2].rstrip("\n")
-        Array.append(col)
-
-# For reading the symbol table and literal table
-def readSym(File,Array):
-    for line in File:
-        if(line[0] == '.'):
-            continue
-        col = line.split()
-        col[1] = col[1].rstrip("\n")
-        Array.append(col)
-
-# For reading the location counter
-def readLoc(File,Array):
-    for line in File:
-        if(line[0] == '.'):
-            continue
-        col = line.split()
-        if(len(col) == 2):
-            col = [col[0], "", col[1].rstrip("\n"), ""]
-        elif(len(col) == 3):
-            col[2] = col[2].rstrip("\n")
-            if col[2] in insDict or col[2] in directives:
-                col = [col[0], col[1], col[2], ""]
-            else:
-                col = [col[0], "", col[1], col[2]]
-        else:
-            col[3] = col[3].rstrip("\n")
-        Array.append(col)
-
 if __name__ == "__main__":
     debug = 1
     base = 0
     baseFlag = 1 
-    directives = ["START", "END", "BASE", "LTORG", "RESW", "RESB"]
+    directives = ["START", "END", "BASE", "LTORG", "RESW", "RESB"] # Array of directives for the read functions
 
     codeFile = "in.txt"
     instructionFile = "in_set.txt"
     symbolTable='symbTable.txt'
     locationCounter='out.txt'
     literalTable='litTable.txt'
+    objCodeFile = 'objCode.txt'
+    objFile = 'out.obj'
 
     ins = open(instructionFile, "r")
     code = open(codeFile,"r")  
-    insDict = {}  
-    codearr = []
-    createInsDict(ins, insDict)       
-    readCode(code,codearr)
+    insDict = createInsDict(ins)  
+    codearr = readCode(code)    
     ins.close()
     code.close()
     passOne()
     if(debug):
         print("Pass One successfully completed!")
 
-    ObjArr=[]
-    locctr=open(locationCounter,"r")
+    locctr = open(locationCounter,"r")
     symTable = open(symbolTable,"r")
-    litTable=open(literalTable,"r")
-    locarr=[]
-    symbarr=[]
-    litarr=[]
-    readLoc(locctr,locarr)
-    readSym(symTable,symbarr)
-    readSym(litTable,litarr)
+    litTable = open(literalTable,"r")
+    locarr = readLoc(locctr)
+    symbarr = readSym(symTable)
+    litarr = readSym(litTable)
     symTable.close()
     locctr.close()
     litTable.close()
