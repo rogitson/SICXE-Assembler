@@ -2,7 +2,7 @@
 
 ### Todo
 
-- [ ] Fix literals
+- [ ] Finish HTE records
 
 ### In Progress
 
@@ -12,3 +12,4 @@
 
 - [x] Finish all the things  
 - [x] Fix interaction between addressing modes and Formats 4+  
+- [x] Fix literals

@@ -179,11 +179,13 @@ def passTwo():
             else:
                 opCode=hex(int(opCode,16)+3)[2:].zfill(2).upper()
             if(i[2] and i[2][0]=="="):#literal , store it in the array
-                if(not Literal_Pool):
+                litFlag = 1
+                if(Literal_Pool):   # Check existence of Lit Pool
+                    for l in Literal_Pool:
+                        if(i[2] == l[0]):   # If current element already in Lit Pool;
+                            litFlag = 0     # Do not append it again to the Lit Pool
+                if(litFlag):
                     Literal_Pool.append([i[2],None])
-                elif(not i[2] in Literal_Pool[0]):
-                    Literal_Pool.append([i[2],None])
-                print(i[2])
                 Flags_Disp_Add=calcAddress(Line_Number,i[2])
             elif(i[2] and i[2][0]=="#" and i[2][1].isdigit()):#check if its constant
                 Flags_Disp_Add=hex(int(i[2][1:]))[2:].zfill(4) #This needs to gooooooo
@@ -216,7 +218,8 @@ def passTwo():
 
 
 def HTE(extDef,extRef):
-    extRef=extRef[0].split(',')
+    if(extRef):
+        extRef=extRef[0].split(',')
     Dlabel=""
     Rlabel=""
     #External Defs
