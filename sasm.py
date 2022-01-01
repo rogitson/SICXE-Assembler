@@ -335,7 +335,7 @@ def HTE():
     obj = open(objFile, "w")
     if(debug):
         print(objarr)
-    HR="H."+ codearr[0][2].zfill(6).upper() + "." + locarr[len(locarr) - 1][0][2:].zfill(6).upper()
+    HR="H."+ "{:6}".format(codearr[0][0].upper()).replace(" ", "_") + "." + locarr[len(locarr) - 1][0][2:].zfill(6).upper()
     T_Size=0
     T_Flag=1
     T_Rec=[]
@@ -367,7 +367,7 @@ def HTE():
             T_Start="T.{:6}.".format(e[0].zfill(6))
             T_Con=""
         else:
-            T_Con+="{s:{n}}.".format(s=e[1],n=len(e[1]))
+            T_Con += "{}.".format(e[1])
             T_Size+=len(e[1])//2
             lineNumber+=1
         if(lineNumber == len(objarr)):
@@ -381,7 +381,7 @@ def HTE():
         if(len(e[1])==8):
             M_Address=hex(int(e[0],16) + 1)[2:].zfill(6)
             M_Bytes=5
-            M_Rec.append("M.{:6}.{:6}+{:6}".format(M_Address.zfill(6),hex(M_Bytes)[2:].zfill(6),codearr[0][0]))
+            M_Rec.append("M.{:6}.{:2}+{:6}".format(M_Address.zfill(6),hex(M_Bytes)[2:].zfill(2),codearr[0][0]))
         i+=1 
     ER="E."+getFirstExe()
     for element in [HR,*T_Rec,*M_Rec, ER,]:
@@ -490,6 +490,7 @@ def generateLiteral(Literalpool, obj, objarr, PC):
             else:#normal decimal
                 i[1] += hex(int(i[0][1:]))[2:].upper()
             objarr.append(i[1])
+            obj.write("-"*50+"\n") # Formatting
             obj.write("{:10}{:20}{:10}{}".format(hex(prevAddress)[2:].zfill(4), i[0], objarr[len(objarr)-1].zfill(2),"\n"))
             prevAddress = currentAddress
 
