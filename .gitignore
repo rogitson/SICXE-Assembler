@@ -1,9 +1,4 @@
-in.txt
-out.txt
-symbTable.txt
-litTable.txt
-in_set.txt
-objCode.txt
-out.obj
+in/
+out/
 __pycache__/
 Testing.py

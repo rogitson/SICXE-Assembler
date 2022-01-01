@@ -5,7 +5,9 @@ You must have python installed. To run the code, simply run
 
 > python sasm.py
 
-Ensure you have the input files in the same directory as the python script. The default names for the input files are "in.txt" and "in_set.txt". These names can be changed inside the script.
+Ensure you have the input files in the "in" directory, with the python script being directly outside of it.
+
+The default names for the input files are "in.txt" and "in_set.txt". These names can be changed inside the script.
 
 The instruction set file should contain each instruction, its format and its opcode all separated by spaces, with each instruction on a separate line.
 
@@ -15,4 +17,5 @@ The input file should contain a SIC or SIC/XE code. Each line is an instruction,
 
 In the case of a label or address not existing, replace them with at least one space.
 # Result
-After running the code, the following files should be generated: "out.txt", "symbTable.txt", "litTable.txt".
+After running the code, the following files should be generated in the "out" directory: 
+> "out.txt", "symbTable.txt", "litTable.txt", "objCode.txt", "out.obj"

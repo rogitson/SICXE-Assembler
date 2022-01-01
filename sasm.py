@@ -500,19 +500,24 @@ def twos_complement(value,hbits):
         value -= 1 << bits
     return value
 
+import os
+
 if __name__ == "__main__":
     debug = 0
     base = 0
     baseFlag = 1 
     directives = ["START", "END", "BASE", "LTORG", "RESW", "RESB","EXTDEF","EXTREF"] # Array of directives for the read functions
 
-    codeFile = "in.txt"
-    instructionFile = "in_set.txt"
-    symbolTable='symbTable.txt'
-    locationCounter='out.txt'
-    literalTable='litTable.txt'
-    objCodeFile = 'objCode.txt'
-    objFile = 'out.obj'
+    if not os.path.exists('out'):
+        os.makedirs('out')
+
+    codeFile = "in/in.txt"
+    instructionFile = "in/in_set.txt"
+    symbolTable='out/symbTable.txt'
+    locationCounter='out/out.txt'
+    literalTable='out/litTable.txt'
+    objCodeFile = 'out/objCode.txt'
+    objFile = 'out/out.obj'
 
     ins = open(instructionFile, "r")
     code = open(codeFile,"r")  
