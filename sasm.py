@@ -27,15 +27,20 @@ def readCode(File):
         col = line.split()
         if(len(col) == 1):
             col = ["", col[0].rstrip("\n"), ""]
+
+
         elif(len(col) == 2):
             col[1] = col[1].rstrip("\n")
             if col[1] in insDict or col[1] in directives:
                 col = [col[0], col[1], ""]
             else:
                 col = ["", col[0], col[1]]
+
+
         else:
             col[2] = col[2].rstrip("\n")
         Array.append(col)
+
     return Array
 
 # For reading the symbol table and literal table
@@ -57,14 +62,18 @@ def readLoc(File):
         if(line[0] == '.'):
             continue
         col = line.split()
+
+
         if(len(col) == 2):
             col = [col[0], "", col[1].rstrip("\n"), ""]
+
         elif(len(col) == 3):
             col[2] = col[2].rstrip("\n")
             if col[2] in insDict or col[2] in directives:
                 col = [col[0], col[1], col[2], ""]
             else:
                 col = [col[0], "", col[1], col[2]]
+
         else:
             col[3] = col[3].rstrip("\n")
         Array.append(col)
@@ -75,7 +84,7 @@ def readObj(File):
     global directives
     Array = []
     for line in File:
-        if(line[0] == '.'):
+        if(line[0] == '.' or '-' in line):
             continue
         col = line.split()
         if(col[1] in directives):
@@ -84,6 +93,7 @@ def readObj(File):
             continue
         col = [col[0], col[len(col) - 1]]
         Array.append(col)
+
     return Array
 
 def passOne():
@@ -103,7 +113,7 @@ def passOne():
             print(i)
         locFile.write("{:<8}{:<8}{:8}{:8}{}".format("0x" + current_address[2:].zfill(4),i[0],i[1],i[2],'\n'))
         steps = 0
-        if(i[1] == "START" or i[1] == "EXTDEF" or i[1]=="EXTREF"):
+        if(i[1] == "START"):
             continue
         elif(i[1] == "LTORG" or i[1] == "END"):
             for e in lit:
@@ -118,6 +128,8 @@ def passOne():
                         steps += 1
                     current_address = hex(int(current_address,16) + steps)
                     litable.write("{:8}{:8}{}".format(e[0],"0x" + e[1][2:].zfill(4),'\n'))
+            continue
+        elif(i[1]=="EQU"):
             continue
         elif(i[1] == "BASE"):
             if(i[2] == "*"):
@@ -199,9 +211,13 @@ def passTwo():
                 print(i)
         Flags_Disp_Add=""
         opCode=""
+        if(PC>1):
+            obj.write("-"*50+"\n")
         if (i[1]=="START" or i[1]=="EQU" or i[1] == "BASE"):#No object Code
             obj.write("{:10}{:10}{:10}{:10}{}".format(locarr[PC - 1][0][2:],i[1],i[2],"","\n"))
             continue
+        elif(i[1]=="EQU"):
+            obj.write("{:10}{:10}{:10}")
         elif(i[1]=="LTORG" or i[1]=="END"):#generate pool Table
             obj.write("{:10}{:10}{:10}{:10}{}".format(locarr[PC - 1][0][2:],i[1],i[2],"","\n"))
             generateLiteral(Literal_Pool, obj, objarr, PC)
@@ -213,19 +229,12 @@ def passTwo():
         elif(i[1]=="WORD"):
             objarr.append(hex((int(i[2])& (2**32-1)))[2:].zfill(6).upper())# issue here with negative and positive[2:] or [4:]
             obj.write("{:10}{:10}{:10}{:10}{}".format(locarr[PC - 1][0][2:],i[1],i[2],objarr[len(objarr)-1],"\n"))
-        elif(i[1]=="EXTREF"):
-            extRef.append(i[2])
-            obj.write("{:10}{:10}{:10}{:10}{}".format(locarr[PC - 1][0][2:],i[1],i[2],"","\n"))
-        elif(i[1]=="EXTDEF"):
-            labels=i[2].split(',')
-            for k in symbarr:
-                for l in labels:
-                    if(l==k[0]):
-                        extDef.append([l,k[1]]) 
-            obj.write("{:10}{:10}{:10}{:10}{}".format(locarr[PC - 1][0][2:],i[1],i[2],"","\n"))
-        elif(i[1]=="BYTE"):
+        elif(i[1]=="BYTE"):#T_Con+="{s:{n}}.".format(s=e[1],n=len(e[1]))
+            obj.write("{0:10}{1:10}{2:{n}}".format(locarr[PC - 1][0][2:],i[1],i[2],n=len(i[2])+5))#20 needs to go
             data = i[2].split(",")
+            l = 0
             for z in data:
+                l+=1
                 Flags_Disp_Add=""
                 if(z[0]=="C"):
                     for x in z[1:]:
@@ -236,7 +245,12 @@ def passTwo():
                         if(x != "'"):
                             Flags_Disp_Add+=x
                 objarr.append(Flags_Disp_Add.upper())
-            obj.write("{:10}{:10}{:10}{:10}{}".format(locarr[PC - 1][0][2:],i[1],i[2],objarr[len(objarr)-1],"\n"))
+                if(l==len(data)):
+                    obj.write("{}".format(objarr[len(objarr)-1].upper()))
+                else:
+                    obj.write("{}".format(objarr[len(objarr)-1].upper())+".")#ADD MULTIPLE BYTES OBJECT CODE
+            obj.write("\n")
+            #obj.write("{:10}{:10}{:10}{:10}{}".format(locarr[PC - 1][0][2:],i[1],i[2],objarr[len(objarr)-1],"\n"))
         elif(i[1]=="RESW" or i[1]=="RESB"):
             obj.write("{:10}{:10}{:10}{}".format(locarr[PC - 1][0][2:],i[1],i[2],"\n"))
             continue
@@ -294,10 +308,9 @@ def passTwo():
             objarr.append(opCode+Flags_Disp_Add)
             obj.write("{:10}{:10}{:10}{:10}{}".format(locarr[PC - 1][0][2:],i[1],i[2],objarr[len(objarr)-1],"\n"))
     obj.close()
-    print(objarr)
-    HTE(extDef,extRef)
+    HTE()
 
-def HTE(extDef,extRef):
+def HTE():
     global objCodeFile, objFile
     obj = open(objCodeFile, "r")
     objarr = readObj(obj)
@@ -305,21 +318,7 @@ def HTE(extDef,extRef):
     obj = open(objFile, "w")
     if(debug):
         print(objarr)
-    if(extRef):
-        extRef=extRef[0].split(',')
-    Dlabel=""
-    Rlabel=""
-    #External Defs
-    for i in extDef:
-        Dlabel+='{:6}.{}.'.format(i[0],i[1][2:].zfill(6).upper())
-    Dlabel=Dlabel[:len(Dlabel)-1]
-    #External Refs
-    for i in extRef:
-        Rlabel+='{s:{c}^{n}}.'.format(s=i,n=6,c='_')
-    Rlabel=Rlabel[:len(Rlabel)-1]
     HR="H."+ codearr[0][2].zfill(6).upper() + "." + locarr[len(locarr) - 1][0][2:].zfill(6).upper()
-    DR="D."+ Dlabel
-    RR="R."+ Rlabel
     T_Size=0
     T_Flag=1
     T_Rec=[]
@@ -327,6 +326,9 @@ def HTE(extDef,extRef):
     i=0
     while(i < len(objarr)):
         e=objarr[i]
+        if(e[1]=="*" or e[1]=="0"):
+            i+=1
+            continue
         if (e[1] == "BORW"):
             if(BORW_Flag):
                 T_Con=T_Con[:len(T_Con)-1]
@@ -365,7 +367,7 @@ def HTE(extDef,extRef):
             M_Rec.append("M.{:6}.{:6}+{:6}".format(M_Address.zfill(6),hex(M_Bytes)[2:].zfill(6),codearr[0][0]))
         i+=1 
     ER="E."+getFirstExe()
-    for element in [HR, DR, RR,*T_Rec,*M_Rec, ER,]:
+    for element in [HR,*T_Rec,*M_Rec, ER,]:
         #print(element)
         obj.write(element + '\n')
     obj.close()
@@ -410,7 +412,7 @@ def calcAddress(PC,Label):
         if(dest != base):
             Flags=Flags.replace(Flags,hex(int(Flags,16) + 1)[2:].upper()) #+F6
         Flags_Disp = Flags + hex(dest)[2:].zfill(5).upper()
-    elif(dest - src <= 2048 and dest - src >= -2048): #PC relative
+    elif(dest - src <= 2047 and dest - src >= -2048): #PC relative
         if(dest-src <0):
             Flags_Disp=Flags + hex((dest-src) & (2**32-1))[7:].upper()
         else:
