@@ -190,7 +190,7 @@ def passTwo():
     global base, baseFlag, objCodeFile
     obj = open(objCodeFile,"w")
     objarr = []
-    if(baseFlag):
+    if(baseFlag and base):
         base = int(getAddress(base), 16)
     Formats=["$","+","&"]
     AddressingTypes=["#","@","="]
@@ -295,10 +295,6 @@ def passTwo():
                 Flags_Disp_Add=calcAddress(PC,line[2])
 
 
-            elif(line[2] and line[2][0]=="#" and line[2][1].isdigit()):#check if its constant
-                Flags_Disp_Add=hex(int(line[2][1:]))[2:].zfill(4) #This needs to gooooooo
-
-
             elif(Format_Flag):#then we are format 3 or lower we check for addressing type now
                 if(j[0]=="1" or j[0]=="2"):
                     opCode=j[1]# format 2 needs handling
@@ -309,18 +305,27 @@ def passTwo():
                         Flags_Disp_Add+=Registers[sl[0]] + Registers[sl[1]]
 
                 elif(j[0]=="34"):#format 3
-                    Flags_Disp_Add=calcAddress(PC,Label)
+                    if(line[2] and line[2][0]=="#" and line[2][1].isdigit()):#check if its constant
+                        Flags_Disp_Add=hex(int(line[2][1:]))[2:].zfill(4) #This needs to gooooooo
+                    else:
+                        Flags_Disp_Add=calcAddress(PC,Label)
 
 
             else:#format 4 or special one
-                Flags_Disp_Add=calcAddress(PC,Label)
-                if(line[1][0] == "&"):
-                    opCode_Increment =-3
-                    if(int(Flags_Disp_Add[1:], 16) % 2 == 0):
-                        opCode_Increment=2
-                    if(twos_complement(int(Flags_Disp_Add[1:], 16), 3) < 0):
-                        opCode_Increment=1
-                opCode=hex(int(opCode,16)+opCode_Increment)[2:].zfill(2).upper() 
+                if(line[1][0] == "&" and line[2][0] in ["#","@"]):
+                            raise Exception("Format 5 neither supports immediate nor indirect addressing modes.")
+                elif(line[2] and line[2][0]=="#" and line[2][1].isdigit()):#check if its constant
+                    Flags_Disp_Add=hex(int(line[2][1:]))[2:].zfill(4) #This needs to gooooooo
+                else:
+                    Flags_Disp_Add=calcAddress(PC,Label)
+                    opCode_Increment = 0
+                    if(line[1][0] == "&"):
+                        opCode_Increment = -3
+                        if(int(Flags_Disp_Add[1:], 16) % 2 == 0):
+                            opCode_Increment += 2
+                        if(twos_complement(int(Flags_Disp_Add[1:], 16), 3) < 0):
+                            opCode_Increment += 1
+                    opCode=hex(int(opCode,16)+opCode_Increment)[2:].zfill(2).upper() 
             #write to array and file
             objarr.append(opCode+Flags_Disp_Add)
             obj.write("{:10}{:10}{:10}{:10}{}".format(locarr[PC - 1][0][2:],line[1],line[2],objarr[len(objarr)-1],"\n"))
@@ -462,6 +467,8 @@ def getAddress(Label):
     for i in symbarr:#check if label exists in the symbolTable
         if (i[0]==Label):
             return i[1][2:]
+    if(debug):
+        print(Label)
     raise Exception("Label not found in Symbol Table")
 
 def generateLiteral(Literalpool, obj, objarr, PC):
