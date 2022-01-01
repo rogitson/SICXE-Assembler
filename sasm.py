@@ -451,7 +451,7 @@ def calcAddress(PC,Label):
             Flags_Disp=Flags + hex(dest-src)[2:].zfill(3).upper()
 
 
-    elif(dest-base <= 4096): #Base relative
+    elif(dest - base <= 4096 and dest - base >= 0): #Base  relative
         Flags=Flags.replace(Flags,hex(int(Flags,16) + 4 - 2)[2:].upper())#-2 are the PC relative
         Flags_Disp=Flags + hex(dest-base)[2:].zfill(3).upper()
 
