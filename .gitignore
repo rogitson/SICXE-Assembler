@@ -2,3 +2,16 @@ in/
 out/
 __pycache__/
 Testing.py
+in_set.txt
+in.txt
+.gitignore
+objCode.txt
+.gitignore
+.gitignore
+symbTable.txt
+.gitignore
+dist/SICXE_ASM/out.txt
+out.obj
+out.txt
+dist/SICXE_ASM/litTable.txt
+litTable.txt
