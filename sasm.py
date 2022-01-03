@@ -527,7 +527,6 @@ if __name__ == "__main__":
     base = 0
     baseFlag = 1 
     directives = ["START", "END", "BASE", "LTORG", "RESW", "RESB","EXTDEF","EXTREF"] # Array of directives for the read functions
-    finalAddress=""
     if not os.path.exists('out'):
         os.makedirs('out')
 
